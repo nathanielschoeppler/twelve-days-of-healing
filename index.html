@@ -204,6 +204,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .lines .btn { padding: 8px 11px; font-size: 14px; }
 .lines h3 { grid-column: 1 / -1; margin: 10px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); font-weight: 400; }
 .lines li.hdr { border: 0; padding: 0; }
+.vlines { display: block; white-space: pre-line; font-size: 14px; font-weight: 400; color: var(--muted, #9fb3a8); margin-top: 4px; line-height: 1.45; }
 .line-stage { border: 1px solid var(--accent); border-radius: 16px; padding: 16px; display: grid; gap: 10px; text-align: center; background: rgba(255, 79, 109, .06); }
 .line-stage .l-cur { font-size: clamp(24px, 5vw, 40px); min-height: 2.2em; }
 @media (max-width: 520px) { .lines li { grid-template-columns: 24px minmax(0, 1fr); } .lines li .row { grid-column: 1 / -1; justify-content: flex-end; } }
@@ -270,7 +271,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 22</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 23</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -290,8 +291,9 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 
   <section id="scrVerses" class="card" hidden>
     <h2>Sing it verse by verse</h2>
+    <p class="note">Each day adds one more gift. Day 2 is two gifts, day 5 is five, and day 12 is the whole countdown, all twelve.</p>
     <div class="coach"><div class="avatar" aria-hidden="true">♪</div><div class="bubble"><span class="who">Your vocal coach</span>
-      <p>One verse at a time. Tap ● next to a verse: you'll hear a short count-in with the music, then sing the whole verse while the words light up. Listen back with ▶ and redo any verse as often as you like. When every verse has a gold ✓, tap <b>Make my song</b> and I'll join them into one song, tuned and mixed.</p></div></div>
+      <p>One verse at a time. Tap ● next to a day: you'll hear a short count-in with the music, then sing the whole verse while the words light up. Listen back with ▶ and redo any verse as often as you like. When every verse has a gold ✓, tap <b>Make my song</b> and I'll join them into one song, tuned and mixed.</p></div></div>
     <div class="row" style="justify-content:space-between"><span class="note" id="versesProg">Getting the music ready…</span><button class="big" id="versesMake" type="button" disabled style="font-size:18px;padding:12px 20px">Make my song</button></div>
     <div class="line-stage" id="verseStage" hidden>
       <span class="verse" id="verseStageLbl">Get ready…</span>
@@ -1985,7 +1987,7 @@ function buildVerses(R) {
     const nextFirst = M.find(m => m.v === v + 1), lastM = ms[ms.length - 1];
     const ns = N.filter(([on]) => on >= ms[0].t - 0.02 && (!nextFirst || on < nextFirst.t - 0.02)), lastEnd = ns.length ? Math.max(...ns.map(([o, d]) => o + d)) : lastM.t + 3;
     const b = nextFirst ? Math.min(nextFirst.t - 0.35, lastEnd + 0.6) : lastEnd + 1.2;
-    out.push({ v, a: Math.max(0, ms[0].t - 0.4), b, first: M.indexOf(ms[0]), last: M.indexOf(lastM), text: lineText(v, ms[0].line) });
+    out.push({ v, a: Math.max(0, ms[0].t - 0.4), b, first: M.indexOf(ms[0]), last: M.indexOf(lastM), text: lineText(v, ms[0].line), lines: ms.map(m => lineText(m.v, m.line)) });
   }
   return out;
 }
@@ -1993,8 +1995,8 @@ function renderVerses() {
   const ul = $('versesList'); if (!VERSES) return; ul.innerHTML = '';
   VERSES.forEach(V => {
     const has = !!K.verseTakes[V.v], li = document.createElement('li'); li.className = has ? 'done' : ''; li.id = 'vs' + V.v;
-    li.innerHTML = `<span class="ck">${has ? '✓' : ''}</span><span class="lt"><b>Verse ${V.v}</b> <span class="note">· ${fmtT(V.b - V.a)}</span><br></span><span class="row"><button class="btn" type="button" data-vrec="${V.v}">● ${has ? 'Redo' : 'Record'}</button>${has ? `<button class="btn" type="button" data-vhear="${V.v}" aria-label="Listen">▶</button>` : ''}</span>`;
-    li.querySelector('.lt').appendChild(document.createTextNode(V.text)); ul.appendChild(li);
+    li.innerHTML = `<span class="ck">${has ? '✓' : ''}</span><span class="lt"><b>Day ${V.v}</b> <span class="note">· ${V.v === 1 ? '1 gift' : V.v + ' gifts'}${V.v === 12 ? ', the whole countdown' : ''} · ${fmtT(V.b - V.a)}</span><br></span><span class="row"><button class="btn" type="button" data-vrec="${V.v}">● ${has ? 'Redo' : 'Record'}</button>${has ? `<button class="btn" type="button" data-vhear="${V.v}" aria-label="Listen">▶</button>` : ''}</span>`;
+    const lt = li.querySelector('.lt'); lt.appendChild(document.createTextNode(V.lines[0])); const rest = document.createElement('span'); rest.className = 'vlines'; rest.textContent = V.lines.slice(1).join('\n'); lt.appendChild(rest); ul.appendChild(li);
   });
   const n = VERSES.filter(V => K.verseTakes[V.v]).length;
   $('versesProg').textContent = `${n} of ${VERSES.length} verses recorded` + (n && n < VERSES.length ? ' · missing verses will be music only' : '');
