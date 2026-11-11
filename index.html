@@ -249,6 +249,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
   <section id="scrMenu" class="menu" hidden>
     <h1>Let's <em>sing</em></h1>
     <p class="lede">What would you like to do?</p>
+    <div class="card" id="inClaude" hidden style="border-color:rgba(244,197,90,.5)"><b>Sound coming from the earpiece?</b> The Claude app plays sound like a phone call. Open the app in Safari instead for full loudspeaker sound: <a href="https://nathanielschoeppler.github.io/twelve-days-of-healing/" target="_blank" rel="noopener">open in Safari</a>.</div>
     <div class="card" id="a2hs" hidden style="border-color:rgba(244,197,90,.5)">
       <div class="row" style="justify-content:space-between"><h2 style="font-size:18px">Put this app on your Home Screen</h2><button class="btn" id="a2hsX" type="button" aria-label="Hide these steps">Hide</button></div>
       <ol class="brief" style="margin:0">
@@ -268,7 +269,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 19</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 20</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1060,10 +1061,14 @@ function playClip(text) { if (tts) return false; const k = clipKeyFor(text); ret
 if (window.COACH_CLIPS) $('ttsBtn').hidden = false;
 // iPhone: let sound play even with the silent switch on, and allow the mic while recording
 function audioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {} }
+function toSpeaker() {                    // after the mic closes: switch back to media playback and restart the audio so iOS re-routes it to the loudspeaker
+  setTimeout(() => { if (micBusy()) return; audioSession('playback'); const c = K.ctx; if (c && c.state === 'running' && c.suspend) c.suspend().then(() => c.resume()).catch(() => {}); }, 250);
+}
 function micBusy() { return !!(lineCap || K.testMic || K.lessonMic || (K.mic && K.mic.active)); }
 function playMode() {                       // make sure sound comes out loud, from the speaker/earbuds
   if (K.lineMic && !lineCap) { stopStream(K.lineMic); K.lineMic = null; }
   if (!micBusy()) audioSession('playback');
+if (window.claude && /iPhone|iPad/.test(navigator.userAgent)) $('inClaude').hidden = false;
 $('sndTest').addEventListener('click', () => {
   playMode(); const c = ctx(); let t = c.currentTime + 0.1;
   [72, 76, 79, 84].forEach(m => { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (m - 69) / 12); o.connect(g); g.connect(c.destination);
@@ -1168,7 +1173,7 @@ async function trySnip(k) {
   const info = await playSnip(k);
   if (!info) return;
   await new Promise(r => setTimeout(r, (info.b - info.a + 0.6) * 1000));
-  ms.disconnect(); sp.disconnect(); z.disconnect(); stopStream(K.lessonMic); K.lessonMic = null; setTimeout(() => audioSession('playback'), 200);
+  ms.disconnect(); sp.disconnect(); z.disconnect(); stopStream(K.lessonMic); K.lessonMic = null; toSpeaker();
   $('fbBody').innerHTML = '<p>Listening back…</p>'; await yieldUI();
   const n = chunks.reduce((a, b) => a + b.length, 0), x = new Float32Array(n); let o = 0; chunks.forEach(ch => { x.set(ch, o); o += ch.length; });
   const fr = await detectPitch(x, c.sampleRate, () => {}), hop = fr.hopSec, exp = buildExpected(hop, tdSong());
@@ -1387,7 +1392,7 @@ $('micTest').addEventListener('click', async () => {
     if (heard > 20) { $('micMsg').innerHTML = peak > -6 ? '<b>I can hear you, but it’s very loud.</b> Move the laptop back a little.' : '<b>Perfect, I can hear you!</b> You’re ready to record.'; }
     else $('micMsg').textContent = 'Listening… sing a note or say “hello”.';
     if (performance.now() - t0 < 12000) micRaf = requestAnimationFrame(tick);
-    else { src.disconnect(); stopStream(st); K.testMic = null; setTimeout(() => audioSession('playback'), 300); $('micLvl').style.width = '0'; if (heard <= 20) $('micMsg').innerHTML = '<b>I couldn’t hear you.</b> Check the right microphone is selected and not muted, then test again.'; }
+    else { src.disconnect(); stopStream(st); K.testMic = null; toSpeaker(); $('micLvl').style.width = '0'; if (heard <= 20) $('micMsg').innerHTML = '<b>I couldn’t hear you.</b> Check the right microphone is selected and not muted, then test again.'; }
   };
   tick();
 });
@@ -1506,7 +1511,7 @@ function stopRecordingNodes() {
   if (K.mic) { K.mic.getTracks().forEach(t => t.stop()); }
 }
 function finishSinging() {
-  cancelAnimationFrame(raf); keepAwake(false); setTimeout(() => audioSession('playback'), 300);
+  cancelAnimationFrame(raf); keepAwake(false); toSpeaker();
   const s = K.src; K.src = null; if (s) { try { s.stop(); } catch (e) {} }
   const hadMic = !!K.mic && K.chunks.length;
   stopRecordingNodes(); K.mic = null;
@@ -1922,7 +1927,7 @@ async function recordLine(i) {
     if (!lineCap) return; cancelAnimationFrame(lineRaf);
     try { lineCap.ms.disconnect(); lineCap.sp.disconnect(); lineCap.z.disconnect(); } catch (e) {} lineCap = null;
     try { src.stop(); } catch (e) {} lineSrc = null; $('lineStage').hidden = true; lineBusy = false;
-    stopStream(K.lineMic); K.lineMic = null; setTimeout(() => audioSession('playback'), 300);
+    stopStream(K.lineMic); K.lineMic = null; toSpeaker();
     const n = chunks.reduce((a, b) => a + b.length, 0), x = new Float32Array(n); let o = 0; chunks.forEach(ch => { x.set(ch, o); o += ch.length; });
     const sr = c.sampleRate, off = recT0 - when + playFrom;                 // song time of the recording's first sample
     const s0 = Math.max(0, Math.round((L.a - off) * sr)), s1 = Math.min(n, Math.round((L.b - off) * sr));
