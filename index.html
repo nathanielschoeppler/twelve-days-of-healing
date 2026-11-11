@@ -261,6 +261,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <div class="tiles">
       <button class="tile hero" type="button" data-go="record"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></span><b>Record the song</b><span>Whole song or quick in parts. The app tunes and mixes it for you.</span></button>
+      <button class="tile" type="button" data-go="practice"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg></span><b>Practice</b><span>Play the music with the words on screen. Sing along, nothing is recorded.</span></button>
       <button class="tile" type="button" data-go="lesson"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><b>Singing lesson</b><span>7 short lessons with your coach. About 10 minutes.</span></button>
       <button class="tile" type="button" data-go="lines"><span class="badge2" id="menuLinesN"></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/><path d="M21 16V6"/></svg></span><b>Sing line by line</b><span>A few words at a time. Redo any line, and the app pieces it together.</span></button>
       <button class="tile" type="button" data-go="verses"><span class="badge2" id="menuVersesN"></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10"/><path d="M17 14l3 3-3 3"/></svg></span><b>Sing verse by verse</b><span>Verse 1, verse 2, and so on. Redo any verse, and the app joins them up.</span></button>
@@ -272,7 +273,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
     <div class="row"><button class="btn del" id="resetPhone" type="button">Reset this phone</button><span class="note">Deletes every take, line and verse saved on this phone and starts the app fresh. Recordings already sent online stay in All recordings.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 26</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 27</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -441,6 +442,23 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <span class="row" style="gap:6px"><button class="btn" data-off="-0.1" type="button" aria-label="Show words earlier">◀</button><span class="note offLbl">Words on time</span><button class="btn" data-off="0.1" type="button" aria-label="Show words later">▶</button></span>
         <button class="btn" id="stopBtn" type="button">■ Stop recording</button>
       </div>
+    </div>
+  </section>
+
+  <!-- PRACTICE -->
+  <section id="scrPractice" class="card stage" hidden>
+    <div class="stage-top"><span class="verse" id="prcVerse">Practice · nothing is recorded</span><span class="note" id="prcMsg"></span></div>
+    <div class="lyrics">
+      <div class="l-prev" id="prcPrev"></div>
+      <div class="l-cur" id="prcCur">Tap ▶ Play to start</div>
+      <div class="l-next" id="prcNext"></div>
+    </div>
+    <div class="stage-bottom">
+      <div class="seek"><input type="range" id="prcSeek" min="0" max="277" step="0.1" value="0" aria-label="Position in the song"><span class="time" id="prcTime">0:00 / 4:37</span></div>
+      <div class="row" style="justify-content:center;gap:10px"><button class="big" id="prcPlay" type="button" style="font-size:18px;padding:12px 26px">▶ Play</button><button class="btn" id="prcRestart" type="button">⟲ From the top</button></div>
+      <div class="row" style="justify-content:center;gap:6px;flex-wrap:wrap" id="prcDays"></div>
+      <label class="row" style="justify-content:center;gap:8px"><input type="checkbox" id="prcGuide"> <span>Play the melody guide (the tune to sing)</span></label>
+      <div class="row" style="justify-content:center;gap:6px"><button class="btn" data-off="-0.1" type="button" aria-label="Show words earlier">◀ Words earlier</button><span class="note offLbl">Words on time</span><button class="btn" data-off="0.1" type="button" aria-label="Show words later">Words later ▶</button></div>
     </div>
   </section>
 
@@ -886,14 +904,15 @@ const K = { takes: [], curTake: null, fromTake: null, lessonMic: null, testMic: 
 const downloadsP = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
 function ctx() { if (!K.ctx) { const AC = window.AudioContext || window.webkitAudioContext; K.ctx = new AC(); } return K.ctx; }
 function show(id) {
+  if (id !== 'scrPractice' && window.__prStop) window.__prStop();
   if (id !== 'scrLesson') { stopLessonAudio(); hush(); if (K.lessonMic) { stopStream(K.lessonMic); K.lessonMic = null; audioSession('playback'); } }
   if (id !== 'scrLines' && typeof stopLineAudio === 'function') { stopLineAudio(); if (lineCap) { try { lineCap.ms.disconnect(); lineCap.sp.disconnect(); } catch (e) {} lineCap = null; lineBusy = false; $('lineStage').hidden = true; } }
   if (id !== 'scrReady' && K.testMic) { cancelAnimationFrame(micRaf); stopStream(K.testMic); K.testMic = null; }
   if (id !== 'scrVerses' && typeof stopVerseAudio === 'function') { stopVerseAudio(); if (verseCap) { try { verseCap.ms.disconnect(); verseCap.sp.disconnect(); } catch (e) {} verseCap = null; verseBusy = false; $('verseStage').hidden = true; } }
   if (id !== 'scrLines' && id !== 'scrVerses' && K.lineMic) { stopStream(K.lineMic); K.lineMic = null; }
   if (!micBusy()) audioSession('playback');
-  ['scrLines', 'scrVerses', 'scrMenu', 'scrTakes', 'scrLyrics', 'scrRecs', 'scrCoachRec', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
-  const n = { scrLines: -1, scrVerses: -1, scrMenu: -1, scrTakes: -1, scrLyrics: -1, scrRecs: -1, scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
+  ['scrLines', 'scrVerses', 'scrPractice', 'scrMenu', 'scrTakes', 'scrLyrics', 'scrRecs', 'scrCoachRec', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
+  const n = { scrLines: -1, scrVerses: -1, scrPractice: -1, scrMenu: -1, scrTakes: -1, scrLyrics: -1, scrRecs: -1, scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
   document.querySelectorAll('#stepper li').forEach((li, i) => li.className = i < n ? 'done' : i === n ? 'on' : '');
   $('stepper').hidden = n === -1;
   $('menuBtn').hidden = ['scrMenu', 'scrSing', 'scrProcess', 'scrCoachRec'].includes(id);
@@ -1379,6 +1398,7 @@ function go(where) {
   else if (where === 'takes') { renderTakes(); show('scrTakes'); }
   else if (where === 'lines') { show('scrLines'); openLines(); }
   else if (where === 'verses') { show('scrVerses'); openVerses(); }
+  else if (where === 'practice') { show('scrPractice'); openPractice(); }
   else if (where === 'recs') { show('scrRecs'); loadRecordings(); }
   else if (where === 'lyrics') { renderLyrics(); show('scrLyrics'); }
   else if (where === 'note') show('scrStart');
@@ -2089,6 +2109,62 @@ $('versesMake').addEventListener('click', async () => {
   K.vocal = out; K.vsr = sr; setMode(false); K.rec = { bars: tdSong(), parts: false, buf: null, marks: R.marks, notes: R.notes }; K.fromTake = null; K.lineMode = 'verses';
   processVocal(-0.3, 0.3);
 });
+/* ---------- practice: the music with the words, nothing recorded ---------- */
+var PR = { src: null, startAt: 0, pos: 0, playing: false, raf: 0, idx: -2, busy: false };
+function prDur() { return K.guided ? K.guided.duration : 277; }
+function prStop() {
+  if (PR.playing && K.ctx) PR.pos = Math.max(0, K.ctx.currentTime - PR.startAt);
+  if (PR.src) { const s = PR.src; PR.src = null; try { s.stop(); } catch (e) {} }
+  PR.playing = false; cancelAnimationFrame(PR.raf); $('prcPlay').textContent = '▶ Play'; keepAwake(false);
+}
+window.__prStop = prStop;
+async function prPlay(from) {
+  if (PR.busy) return; PR.busy = true; playMode(); hush();
+  try {
+    prStop(); if (from !== undefined) PR.pos = from;
+    if (!K.guided || !K.marks) { $('prcMsg').textContent = 'Getting the music ready…'; $('prcPlay').disabled = true; }
+    const c = await liveCtx(); await prepareGuided(); $('prcPlay').disabled = false; $('prcMsg').textContent = '';
+    if ($('scrPractice').hidden) return;
+    const buf = K.guided; if (PR.pos >= buf.duration - 0.5) PR.pos = 0;
+    $('prcSeek').max = buf.duration.toFixed(1);
+    const s = c.createBufferSource(); s.buffer = buf; s.connect(c.destination);
+    const when = c.currentTime + 0.08; s.start(when, PR.pos); PR.src = s; PR.startAt = when - PR.pos; PR.playing = true; PR.idx = -2;
+    s.onended = () => { if (PR.src === s) { PR.src = null; PR.playing = false; PR.pos = 0; cancelAnimationFrame(PR.raf); $('prcPlay').textContent = '▶ Play again'; $('prcVerse').textContent = 'That’s the whole song. Great practice!'; keepAwake(false); } };
+    $('prcPlay').textContent = '⏸ Pause'; keepAwake(true); prLoop();
+  } finally { PR.busy = false; }
+}
+function prRender(t) {
+  const M = K.marks; if (!M) return;
+  const st = kState(t, M, fullNotes()), i = st.i;
+  if (i !== PR.idx) {
+    PR.idx = i;
+    if (i < 0) { $('prcPrev').textContent = ''; $('prcNext').textContent = M[0] ? lineText(M[0].v, M[0].line) : ''; $('prcVerse').textContent = 'Intro'; }
+    else {
+      const cur = M[i], prev = M[i - 1], next = M[i + 1];
+      $('prcPrev').textContent = prev ? lineText(prev.v, prev.line) : '';
+      setCur($('prcCur'), lineText(cur.v, cur.line));
+      $('prcNext').textContent = next ? (next.v !== cur.v ? `Day ${next.v}…` : lineText(next.v, next.line)) : '';
+      $('prcVerse').textContent = `Day ${cur.v} of 12`;
+    }
+  }
+  if (i < 0) { const left = M[0].t - t; $('prcCur')._w = null; $('prcCur').innerHTML = `<span class="count">${left > 0.6 ? Math.ceil(left - 0.5) : '♪'}</span>`; }
+  else setProg($('prcCur'), st);
+  $('prcSeek').value = Math.max(0, t).toFixed(1); $('prcTime').textContent = `${fmtT(Math.max(0, t))} / ${fmtT(prDur())}`;
+}
+function prLoop() { if (!PR.playing) return; prRender(audioNow(K.ctx) - PR.startAt); PR.raf = requestAnimationFrame(prLoop); }
+async function openPractice() {
+  $('prcGuide').checked = K.guide; PR.idx = -2;
+  const days = $('prcDays'); if (!days.childElementCount) {
+    days.innerHTML = '<span class="note" style="width:100%;text-align:center">Jump to a day:</span>' + Array.from({ length: 12 }, (_, k) => `<button class="btn" type="button" data-pday="${k + 1}" style="min-width:44px;padding:8px 10px">${k + 1}</button>`).join('');
+  }
+  if (!K.guided || !K.marks) { $('prcMsg').textContent = 'Getting the music ready…'; $('prcPlay').disabled = true; await prepareGuided(); $('prcPlay').disabled = false; $('prcMsg').textContent = ''; }
+  $('prcSeek').max = prDur().toFixed(1); if (!PR.playing) { prRender(PR.pos); if (PR.pos < 0.1) { $('prcCur')._w = null; $('prcCur').textContent = 'Tap ▶ Play to start'; } }
+}
+$('prcPlay').addEventListener('click', () => { if (PR.playing) { prStop(); } else prPlay(); });
+$('prcRestart').addEventListener('click', () => prPlay(0));
+$('prcSeek').addEventListener('input', e => { const t = +e.target.value; if (PR.playing) prPlay(t); else { PR.pos = t; PR.idx = -2; prRender(t); } });
+document.addEventListener('click', e => { const d = e.target.closest('[data-pday]'); if (!d || !K.marks) return; const m = K.marks.find(x => x.v === +d.dataset.pday); if (m) prPlay(Math.max(0, m.t - 2)); });
+$('prcGuide').addEventListener('change', e => { const was = PR.playing; prStop(); K.guide = e.target.checked; if ($('guide')) $('guide').checked = K.guide; prepareGuided(); if (was) prPlay(); });
 function useTake(id) {
   const t = K.takes.find(x => x.id === id); if (!t) return;
   plStop(); K.vocal = fromI16(t.pcm); K.vsr = t.vsr; setShift(t.shift); setMode(t.mode === 'parts' || t.mode === 'lines');
