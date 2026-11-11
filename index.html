@@ -156,6 +156,32 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .ding:disabled { opacity: .7; cursor: default; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 21; background: var(--gold); color: var(--accent-ink); font-weight: 700; padding: 12px 18px; border-radius: 14px; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); max-width: calc(100% - 32px); text-align: center; }
 .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.recs { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.recs li { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; }
+.recs .rt { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.recs .rm { font-size: 13px; color: var(--muted); }
+.recs audio { width: 100%; }
+.cloud { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.menu { display: grid; gap: 18px; }
+.menu h1 { font-size: clamp(32px, 6.5vw, 52px); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tile { font: inherit; text-align: left; color: var(--ink); background: var(--stage); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: grid; gap: 6px; align-content: start; cursor: pointer; min-height: 116px; position: relative; }
+.tile:hover { border-color: var(--muted); }
+.tile:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tile .ti { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(244, 197, 90, .12); color: var(--gold); }
+.tile .ti svg { width: 20px; height: 20px; }
+.tile b { font-family: var(--display); font-size: 19px; font-weight: 700; }
+.tile span { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.tile.hero { grid-column: 1 / -1; background: linear-gradient(140deg, rgba(255, 79, 109, .22), rgba(244, 197, 90, .12)); border-color: rgba(244, 197, 90, .45); min-height: 0; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 14px; }
+.tile.hero .ti { width: 46px; height: 46px; background: var(--accent); color: var(--accent-ink); grid-row: span 2; }
+.tile.hero b { font-size: 23px; }
+.tile .badge2 { position: absolute; top: 14px; right: 14px; font-family: var(--mono); font-size: 11px; color: var(--gold); }
+.lyr-all { display: grid; gap: 18px; }
+.lyr-all h3 { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin: 0 0 4px; font-weight: 400; }
+.lyr-all p { font-family: var(--display); font-size: 18px; line-height: 1.5; }
+.lyr-all .nw { color: var(--gold); font-weight: 700; }
+@media (max-width: 420px) { .tiles { grid-template-columns: 1fr; } .tile { min-height: 0; } }
 .cue { font-family: var(--display); font-weight: 600; font-size: clamp(16px, 2.4vw, 20px); color: var(--accent); min-height: 1.5em; text-align: center; }
 @media (max-width: 600px) { .stepper li { font-size: 11px; } }
 @media (max-width: 600px) { .ctl-grid { grid-template-columns: 1fr; } .big { width: 100%; } }
@@ -166,13 +192,50 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 <div class="toast" id="toast" role="status" hidden></div>
 </head><body>
 <div class="wrap">
-  <div class="brand"><i></i> Made for Hannah, with love</div>
+  <div class="topbar"><div class="brand"><i></i> Made for Hannah, with love</div><button class="btn" id="menuBtn" type="button" hidden>☰ Menu</button></div>
   <ol class="stepper" id="stepper" aria-label="Progress">
     <li class="on"><span>STEP 1</span>Singing lesson</li>
     <li><span>STEP 2</span>Record</li>
     <li><span>STEP 3</span>We make your song</li>
     <li><span>STEP 4</span>Listen &amp; save</li>
   </ol>
+
+  <!-- MAIN MENU -->
+  <section id="scrMenu" class="menu" hidden>
+    <h1>Hi <em>Hannah</em></h1>
+    <p class="lede">What would you like to do?</p>
+    <div class="tiles">
+      <button class="tile hero" type="button" data-go="record"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></span><b>Record the song</b><span>Whole song or quick in parts. The app tunes and mixes it for you.</span></button>
+      <button class="tile" type="button" data-go="lesson"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><b>Singing lesson</b><span>7 short lessons with your coach. About 10 minutes.</span></button>
+      <button class="tile" type="button" data-go="takes"><span class="badge2" id="menuTakesN"></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><b>My takes</b><span id="menuTakesTxt">Listen to and save your recordings.</span></button>
+      <button class="tile" type="button" data-go="recs" id="menuRecs" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 13 3.5 3.5 0 0 0 6 19z"/></svg></span><b>All recordings</b><span>Every take sent to Nathaniel, online.</span></button>
+      <button class="tile" type="button" data-go="lyrics"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><b>Lyrics</b><span>All twelve verses of the Twelve Days of Healing.</span></button>
+      <button class="tile" type="button" data-go="note"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg></span><b>Nathaniel's note</b><span>Read it again, and change your voice range.</span></button>
+      <button class="tile" type="button" data-go="peace"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
+    </div>
+  </section>
+
+  <!-- MY TAKES -->
+  <section id="scrTakes" class="card" hidden>
+    <div class="row" style="justify-content:space-between"><h2>My takes</h2><button class="btn" type="button" data-go="record">● Record a new take</button></div>
+    <p class="note" id="takesHint">Tap “Listen to this take” to hear it, adjust it and save it.</p>
+    <ul class="takes" id="takesList2"></ul>
+  </section>
+
+  <!-- LYRICS -->
+  <section id="scrLyrics" class="card" hidden>
+    <h2>The Twelve Days of Healing</h2>
+    <p class="note">The new gift in each verse is in gold.</p>
+    <div class="lyr-all" id="lyrAll"></div>
+  </section>
+
+  <!-- RECORDINGS (all of Hannah's takes, stored online) -->
+  <section id="scrRecs" class="card" hidden>
+    <div class="row" style="justify-content:space-between"><h2>All recordings</h2><div class="row" style="gap:8px"><button class="btn" id="recsRefresh" type="button">Refresh</button><button class="btn" id="recsBack" type="button">← Menu</button></div></div>
+    <p class="note">Every take Hannah records is uploaded here automatically: the finished song, her voice with the music. Newest first. Deleting here removes it from the online storage for both of you.</p>
+    <ul class="recs" id="recsList"></ul>
+    <p class="msg" id="recsMsg"></p>
+  </section>
 
   <!-- PEACE -->
   <section id="scrPeace" class="peace">
@@ -193,7 +256,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <p>God is with you: your strength, your help, and your support.</p></div>
     </div>
     <div class="row"><button class="big" id="peaceBtn" type="button">Amen. I'm ready to begin</button></div>
-    <p class="note" style="opacity:.6">App version 9 · natural coach voice · Ding Nathaniel by text</p>
+    <p class="note" style="opacity:.6">App version 12 · Recordings connected</p>
     <p class="note">Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.</p>
   </section>
 
@@ -225,6 +288,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <div class="row">
         <button class="big" id="lessonBtn" type="button">Start my singing lesson</button>
         <button class="btn" id="skipLesson" type="button">Skip to recording</button>
+        <button class="btn" type="button" data-go="menu">Main menu</button>
       </div>
       <span class="prep" id="prepMsg">Getting the music ready…</span>
       <div class="row" id="takesStart" hidden><span class="note" id="takesStartTxt"></span><button class="btn" id="openTakes" type="button">Open my takes</button></div>
@@ -754,9 +818,12 @@ function ctx() { if (!K.ctx) { const AC = window.AudioContext || window.webkitAu
 function show(id) {
   if (id !== 'scrLesson') { stopLessonAudio(); hush(); if (K.lessonMic) { stopStream(K.lessonMic); K.lessonMic = null; audioSession('playback'); } }
   if (id !== 'scrReady' && K.testMic) { cancelAnimationFrame(micRaf); stopStream(K.testMic); K.testMic = null; }
-  ['scrCoachRec', 'scrPeace', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
-  const n = { scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
+  ['scrMenu', 'scrTakes', 'scrLyrics', 'scrRecs', 'scrCoachRec', 'scrPeace', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
+  const n = { scrMenu: -1, scrTakes: -1, scrLyrics: -1, scrRecs: -1, scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
   document.querySelectorAll('#stepper li').forEach((li, i) => li.className = i < n ? 'done' : i === n ? 'on' : '');
+  $('stepper').hidden = n === -1;
+  $('menuBtn').hidden = ['scrMenu', 'scrSing', 'scrProcess', 'scrCoachRec'].includes(id) || (id === 'scrPeace' && !visited());
+  if (id === 'scrMenu') renderMenu();
 }
 
 /* ---------- music prep ---------- */
@@ -1115,7 +1182,36 @@ $('crGo').addEventListener('click', () => {
 });
 $('crStop').addEventListener('click', () => { hush(); crIdx = 0; $('crGo').disabled = false; $('crGo').textContent = 'Read line 1 of 9'; $('crMsg').textContent = 'Back to line 1. Restart your recording too, then click the red button.'; });
 if (location.hash === '#coach-recording') setTimeout(() => show('scrCoachRec'), 0);
-$('peaceBtn').addEventListener('click', () => { audioSession('playback'); try { ctx().resume(); } catch (e) {} show('scrStart'); });
+function visited() { try { return localStorage.getItem('tdh-visited') === '1'; } catch (e) { return false; } }
+function markVisited() { try { localStorage.setItem('tdh-visited', '1'); } catch (e) {} }
+function renderMenu() {
+  const n = K.takes.length;
+  $('menuTakesN').textContent = n ? n + (n === 1 ? ' take' : ' takes') : '';
+  $('menuTakesTxt').textContent = n ? 'Listen to, compare and save your recordings.' : 'No takes yet. They appear here after you record.';
+  $('menuRecs').hidden = !cloudOn();
+}
+function renderLyrics() {
+  let h = '';
+  for (let v = 1; v <= 12; v++) {
+    const lines = [lineText(v, 'open')]; for (let i = v; i >= 1; i--) lines.push(lineText(v, i));
+    h += `<div><h3>Verse ${v}</h3><p>${escH(lines[0])}<br>${lines.slice(1).map((l, k) => k === 0 ? `<span class="nw">${escH(l)}</span>` : escH(l)).join('<br>')}</p></div>`;
+  }
+  $('lyrAll').innerHTML = h;
+}
+function go(where) {
+  hush();
+  if (where === 'record') show('scrReady');
+  else if (where === 'lesson') { lsn = 0; show('scrLesson'); renderLesson(); speak(LESSONS[0].say); }
+  else if (where === 'takes') { renderTakes(); show('scrTakes'); }
+  else if (where === 'recs') { show('scrRecs'); loadRecordings(); }
+  else if (where === 'lyrics') { renderLyrics(); show('scrLyrics'); }
+  else if (where === 'note') show('scrStart');
+  else if (where === 'peace') show('scrPeace');
+  else show('scrMenu');
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+$('menuBtn').addEventListener('click', () => { plStop(); show('scrMenu'); });
+$('peaceBtn').addEventListener('click', () => { audioSession('playback'); try { ctx().resume(); } catch (e) {} const first = !visited(); markVisited(); show(first ? 'scrStart' : 'scrMenu'); });
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
   setMode(b.dataset.mode === 'parts');
   hush(); speak(briefText(K.parts ? '#partsBrief' : '#fullBrief'));
@@ -1489,6 +1585,74 @@ $('dingBtn').addEventListener('click', async () => {
   setTimeout(() => { btn.disabled = false; $('dingTxt').textContent = 'Ding Nathaniel'; }, 15000);
 });
 
+/* ---------- cloud copy of every take (Supabase Storage), so Nathaniel can hear them anywhere ---------- */
+const CLOUD = { url: 'https://lhdslrttbfrukdjhxyjx.supabase.co', key: 'sb_publishable_RpXoVj4nSVHWwpVwFmIXfQ_JTx1no8c', bucket: 'recordings' };
+const cloudOn = () => !CLOUD.url.startsWith('__') && !CLOUD.key.startsWith('__');
+// works with both kinds of Supabase key: the older "anon" key (a JWT) and the newer "publishable" key
+const cloudHeaders = extra => Object.assign({ apikey: CLOUD.key }, CLOUD.key.startsWith('sb_') ? {} : { Authorization: 'Bearer ' + CLOUD.key }, extra || {});
+function cloudName(t) {
+  const d = new Date(t.created), pad = n => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  return `${stamp}__${t.name.replace(/\s+/g, '-')}__${t.mode}__${Math.round(t.dur)}s.wav`;
+}
+async function renderForCloud() {
+  // the finished song at a phone-friendly size: mono, 24 kHz (about 13 MB for the whole song)
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext, sr = 24000;
+  const oc = new OAC(1, Math.ceil(K.music.duration * sr), sr), ab = K.ab; K.ab = 'after'; mixGraph(oc, 0, 0, true); K.ab = ab;
+  const b = await oc.startRendering(); const d = b.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
+  if (pk > 0.98) for (let i = 0; i < d.length; i++) d[i] *= 0.98 / pk;
+  return new Blob([wavBytes(b)], { type: 'audio/wav' });
+}
+async function uploadTake(t) {
+  if (!cloudOn()) return;
+  t.cloud = 'sending'; renderTakes();
+  try {
+    const blob = await renderForCloud();
+    const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${encodeURIComponent(cloudName(t))}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'audio/wav' }), body: blob });
+    t.cloud = r.ok ? 'sent' : 'failed';
+  } catch (e) { t.cloud = 'failed'; }
+  TakeDB.put(t).catch(() => {}); renderTakes();
+}
+async function loadRecordings() {
+  const ul = $('recsList'), msg = $('recsMsg'); ul.innerHTML = ''; msg.classList.remove('err');
+  if (!cloudOn()) { msg.textContent = 'Online storage isn’t connected yet.'; return; }
+  msg.textContent = 'Loading recordings…';
+  try {
+    const r = await fetch(`${CLOUD.url}/storage/v1/object/list/${CLOUD.bucket}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'name', order: 'desc' } }) });
+    if (!r.ok) throw new Error('list ' + r.status);
+    const files = (await r.json()).filter(f => /\.wav$/i.test(f.name));
+    msg.textContent = files.length ? '' : 'No recordings yet. They appear here as soon as Hannah finishes a take.';
+    files.forEach(f => {
+      const [stamp, name, mode, secs] = f.name.replace(/\.wav$/i, '').split('__');
+      const m = /^(\d{4})-(\d\d)-(\d\d)_(\d\d)-(\d\d)/.exec(stamp || ''), when = m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) : null;
+      const src = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${encodeURIComponent(f.name)}`;
+      const li = document.createElement('li');
+      li.innerHTML = `<div class="rt"></div><div class="rm"></div><audio controls preload="none"></audio><div class="row"><a class="btn" target="_blank" rel="noopener">Download</a><button class="btn del" type="button">Delete</button></div>`;
+      li.querySelector('.rt').textContent = (name || 'Take').replace(/-/g, ' ');
+      li.querySelector('.rm').textContent = [when ? when.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '', mode === 'parts' ? 'Quick, in parts' : 'Whole song', secs ? fmtT(parseInt(secs)) : ''].filter(Boolean).join(' · ');
+      li.querySelector('audio').src = src; const a = li.querySelector('a'); a.href = src + '?download=' + encodeURIComponent(f.name); a.download = f.name;
+      const del = li.querySelector('.del');
+      del.onclick = async () => {
+        if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Tap again to delete for good'; setTimeout(() => { if (del.isConnected && del.dataset.sure) { delete del.dataset.sure; del.textContent = 'Delete'; } }, 4000); return; }
+        del.disabled = true; del.textContent = 'Deleting…';
+        try {
+          const d = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, { method: 'DELETE', headers: cloudHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: [f.name] }) });
+          const out = d.ok ? await d.json().catch(() => []) : null;
+          if (!d.ok || (Array.isArray(out) && !out.length)) throw new Error('not deleted');
+          li.remove(); toast('Recording deleted.'); loadRecordings();
+        } catch (e) { del.disabled = false; delete del.dataset.sure; del.textContent = 'Delete'; toast('That recording couldn’t be deleted. Try again in a moment.'); }
+      };
+      ul.appendChild(li);
+    });
+    const used = files.reduce((a, f) => a + ((f.metadata && f.metadata.size) || 0), 0);
+    if (files.length) msg.textContent = `${files.length} recording${files.length === 1 ? '' : 's'} · using ${(used / 1048576).toFixed(0)} MB of the free 1,000 MB.`;
+  } catch (e) { msg.textContent = 'The recordings couldn’t be loaded. Check the internet connection and press Refresh.'; msg.classList.add('err'); }
+}
+$('recsRefresh').addEventListener('click', loadRecordings);
+$('recsBack').addEventListener('click', () => show('scrMenu'));
+if (location.hash === '#recordings') setTimeout(() => { show('scrRecs'); loadRecordings(); }, 0);
+if (location.hash === '#menu') setTimeout(() => show('scrMenu'), 0);
+
 /* ---------- takes: every recording is kept (on this computer when the browser allows) ---------- */
 const TakeDB = (() => {
   let dbp = null;
@@ -1503,11 +1667,13 @@ const fromI16 = x => { const o = new Float32Array(x.length); for (let i = 0; i <
 const KEYNAME = { '-2': 'E♭', '0': 'F', '2': 'G' };
 function takeMeta(t) {
   const d = new Date(t.created), when = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return `${t.mode === 'parts' ? 'In parts' : 'Whole song'} · ${KEYNAME[t.shift] || 'F'} major · ${fmtT(t.dur)} · ${when}${t.saved === false ? ' · this session only' : ''}`;
+  const cl = !cloudOn() ? '' : t.cloud === 'sent' ? ' · ✓ sent to Nathaniel' : t.cloud === 'sending' ? ' · sending to Nathaniel…' : t.cloud === 'failed' ? ' · not sent yet' : '';
+  return `${t.mode === 'parts' ? 'In parts' : 'Whole song'} · ${KEYNAME[t.shift] || 'F'} major · ${fmtT(t.dur)} · ${when}${t.saved === false ? ' · this session only' : ''}${cl}`;
 }
-function renderTakes() {
-  const ul = $('takesList'), list = K.takes.slice().sort((a, b) => b.created - a.created);
-  ul.innerHTML = '';
+function renderTakes() { renderTakesInto($('takesList')); renderTakesInto($('takesList2')); if (!$('scrMenu').hidden) renderMenu(); }
+function renderTakesInto(ul) {
+  const list = K.takes.slice().sort((a, b) => b.created - a.created);
+  ul.innerHTML = list.length ? '' : '<li><span class="note">No takes yet. Tap “Record a new take” to make your first one.</span></li>';
   list.forEach(t => {
     const li = document.createElement('li'); li.className = t.id === K.curTake ? 'cur' : '';
     li.innerHTML = `<div><div class="tn"></div><div class="tm"></div></div><div class="row" style="gap:6px"></div>`;
@@ -1515,16 +1681,18 @@ function renderTakes() {
     const r = li.querySelector('.row');
     if (t.id === K.curTake) { const s = document.createElement('span'); s.className = 'now'; s.textContent = 'Listening now'; r.appendChild(s); }
     else { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = 'Listen to this take'; b.onclick = () => useTake(t.id); r.appendChild(b); }
-    const del = document.createElement('button'); del.className = 'btn'; del.type = 'button'; del.textContent = 'Delete';
+    if (cloudOn() && t.cloud === 'failed' && t.id === K.curTake) { const u = document.createElement('button'); u.className = 'btn'; u.type = 'button'; u.textContent = 'Send to Nathaniel again'; u.onclick = () => uploadTake(t); r.appendChild(u); }
+    const del = document.createElement('button'); del.className = 'btn'; del.type = 'button'; del.textContent = 'Remove from this phone';
     del.onclick = () => {
-      if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Tap again to delete'; setTimeout(() => { if (del.isConnected) { delete del.dataset.sure; del.textContent = 'Delete'; } }, 3500); return; }
+      if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Tap again to remove'; setTimeout(() => { if (del.isConnected) { delete del.dataset.sure; del.textContent = 'Remove from this phone'; } }, 3500); return; }
       K.takes = K.takes.filter(x => x.id !== t.id); TakeDB.del(t.id).catch(() => {}); if (K.curTake === t.id) K.curTake = null; renderTakes(); renderTakesStart();
     };
     r.appendChild(del); ul.appendChild(li);
   });
+  if (ul.id !== 'takesList') return;
   $('takesNote').textContent = K.takes.some(t => t.saved === false)
     ? 'This browser won’t let the app keep takes after you close it, so save the take you like before leaving.'
-    : 'Every take is kept on this computer, so you can compare them and keep your favourite.';
+    : 'Every take is kept on this phone so you can compare them. “Remove from this phone” frees up space here; copies already sent to Nathaniel stay in Recordings.';
 }
 function renderTakesStart() {
   const n = K.takes.length; $('takesStart').hidden = !n;
@@ -1537,6 +1705,7 @@ async function addTake() {
   notifyNathaniel('Hannah just recorded her song!', `${t.name}: ${t.mode === 'parts' ? 'quick, in parts' : 'whole song'}, ${fmtT(t.dur)} long. Ask her to play it for you!`);
   try { await TakeDB.put(t); t.saved = true; } catch (e) { t.saved = false; }
   renderTakes();
+  uploadTake(t);
 }
 function setShift(v) { K.shift = v; document.querySelectorAll('[data-shift]').forEach(x => x.setAttribute('aria-pressed', +x.dataset.shift === v)); }
 function setMode(parts) { K.parts = parts; document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', (x.dataset.mode === 'parts') === parts)); $('partsBrief').hidden = !parts; $('fullBrief').hidden = parts; }
