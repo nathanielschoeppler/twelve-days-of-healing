@@ -193,7 +193,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <p>God is with you: your strength, your help, and your support.</p></div>
     </div>
     <div class="row"><button class="big" id="peaceBtn" type="button">Amen. I'm ready to begin</button></div>
-    <p class="note" style="opacity:.6">App version 8 · natural coach voice · Ding Nathaniel</p>
+    <p class="note" style="opacity:.6">App version 9 · natural coach voice · Ding Nathaniel by text</p>
     <p class="note">Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.</p>
   </section>
 
@@ -382,6 +382,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <button class="big" id="saveBtn" type="button">Save this take</button>
         <button class="btn" id="otherBtn" type="button">Use a different recording</button>
         <button class="btn" id="rawBtn" type="button">Save my original recording</button>
+        <button class="btn" id="tellBtn" type="button">Text Nathaniel: I recorded it!</button>
       </div>
       <p class="msg" id="saveMsg">Saves a .zip with the finished song and your voice on its own, both as high-quality WAV files.</p>
     </div>
@@ -1457,6 +1458,14 @@ async function processVocal(lagMin, lagMax) {
 }
 
 /* ---------- tell Nathaniel when Hannah records (push notification via the free ntfy app) ---------- */
+// Nathaniel's number (or iMessage email): the Ding button opens Messages to him with a note already written
+const NATHANIEL_TEXT_TO = '+17152129135';
+function textNathaniel(body) {
+  if (!NATHANIEL_TEXT_TO || NATHANIEL_TEXT_TO.startsWith('__')) return false;
+  const to = NATHANIEL_TEXT_TO.replace(/[^\d+@.a-zA-Z_-]/g, '');
+  location.href = `sms:${to}&body=${encodeURIComponent(body)}`;
+  return true;
+}
 const NOTIFY_TOPIC = 'twelve-days-hannah-76c54e3d2e';
 function notifyNathaniel(title, msg, tags, priority) {
   try { return fetch('https://ntfy.sh/' + NOTIFY_TOPIC, { method: 'POST', body: msg, headers: { Title: title, Tags: tags || 'christmas_tree,microphone', Priority: priority || '3' } }).then(r => r.ok).catch(() => false); }
@@ -1470,10 +1479,14 @@ $('dingBtn').addEventListener('click', async () => {
   const btn = $('dingBtn'); btn.disabled = true; $('dingTxt').textContent = 'Sending…';
   const scr = Object.keys(SCREEN_NAME).find(id => $(id) && !$(id).hidden) || 'scrStart';
   const where = scr === 'scrLesson' ? `the singing lesson (${$('lsnNum').textContent})` : SCREEN_NAME[scr];
-  const ok = await notifyNathaniel('Hannah dinged you!', `She tapped "Ding Nathaniel" on ${where}. Check in and see what she needs.`, 'bell,christmas_tree', '4');
-  toast(ok ? 'Ding sent! Nathaniel will check in with you.' : 'The ding didn’t go through. Check the internet connection and try again.');
-  $('dingTxt').textContent = ok ? 'Dinged ✓' : 'Ding Nathaniel';
-  setTimeout(() => { btn.disabled = false; $('dingTxt').textContent = 'Ding Nathaniel'; }, ok ? 15000 : 1500);
+  notifyNathaniel('Hannah dinged you!', `She tapped "Ding Nathaniel" on ${where}. Check in and see what she needs.`, 'bell,christmas_tree', '4');
+  if (textNathaniel(`Hey, can you check in on me? I'm on ${where} in the song app.`)) {
+    toast('Messages is open. Tap Send to text Nathaniel.');
+    setTimeout(() => { btn.disabled = false; $('dingTxt').textContent = 'Ding Nathaniel'; }, 2500);
+    return;
+  }
+  toast('Ding sent! Nathaniel will check in with you.');
+  setTimeout(() => { btn.disabled = false; $('dingTxt').textContent = 'Ding Nathaniel'; }, 15000);
 });
 
 /* ---------- takes: every recording is kept (on this computer when the browser allows) ---------- */
@@ -1636,6 +1649,10 @@ async function saveRaw(msgEl) {
   } catch (e) { msgEl.textContent = e && e.code === 'declined' ? 'Save cancelled.' : 'The recording could not be saved here.'; }
 }
 $('rawBtn').addEventListener('click', () => saveRaw($('saveMsg')));
+$('tellBtn').addEventListener('click', () => {
+  const ct = K.takes.find(x => x.id === K.curTake);
+  if (!textNathaniel(`I just recorded my Twelve Days of Healing song${ct ? ' (' + ct.name + ')' : ''}! Come have a listen.`)) toast('Texting isn’t set up yet.');
+});
 $('rawBtn2').addEventListener('click', () => saveRaw($('upMsg')));
 $('againBtn').addEventListener('click', () => { plStop(); show('scrReady'); prepareGuided(); });
 $('otherBtn').addEventListener('click', () => { plStop(); show('scrUpload'); $('upMsg').textContent = ''; prepareRec().then(r => K.rec = r); });
