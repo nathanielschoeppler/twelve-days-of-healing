@@ -270,7 +270,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 21</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 22</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1735,8 +1735,8 @@ $('dingBtn').addEventListener('click', async () => {
   const btn = $('dingBtn'); btn.disabled = true; $('dingTxt').textContent = 'Sending…';
   const scr = Object.keys(SCREEN_NAME).find(id => $(id) && !$(id).hidden) || 'scrStart';
   const where = scr === 'scrLesson' ? `the singing lesson (${$('lsnNum').textContent})` : SCREEN_NAME[scr];
-  notifyNathaniel('Your singer dinged you!', `They tapped "Ding Nathaniel" on ${where}. Check in and see what she needs.`, 'bell,christmas_tree', '4');
-  if (textNathaniel(`Hey, can you check in on me? I'm on ${where} in the song app.`)) {
+  notifyNathaniel('Your singer dinged you!', `They tapped "Ding Nathaniel" on ${where}. Check in and see what they need.`, 'bell,christmas_tree', '4');
+  if (textNathaniel(`Hi Nathaniel! I have a quick question about the Twelve Days of Healing song app. Can you get back to me when you have a minute? Thanks!`)) {
     toast('Messages is open. Tap Send to text Nathaniel.');
     setTimeout(() => { btn.disabled = false; $('dingTxt').textContent = 'Ding Nathaniel'; }, 2500);
     return;
