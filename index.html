@@ -193,6 +193,32 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .tour-card .row { flex-wrap: nowrap; }
 .tour-card .big { width: auto !important; }
 .tour-card p { font-size: 16px; }
+.lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lines li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.lines li.done { border-color: rgba(244, 197, 90, .45); }
+.lines li.now { border-color: var(--accent); background: rgba(255, 79, 109, .08); }
+.lines .ck { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--accent-ink); }
+.lines li.done .ck { background: var(--gold); border-color: var(--gold); }
+.lines .lt { font-family: var(--display); font-weight: 600; font-size: 16px; line-height: 1.35; }
+.lines .row { gap: 6px; flex-wrap: nowrap; }
+.lines .btn { padding: 8px 11px; font-size: 14px; }
+.lines h3 { grid-column: 1 / -1; margin: 10px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); font-weight: 400; }
+.lines li.hdr { border: 0; padding: 0; }
+.line-stage { border: 1px solid var(--accent); border-radius: 16px; padding: 16px; display: grid; gap: 10px; text-align: center; background: rgba(255, 79, 109, .06); }
+.line-stage .l-cur { font-size: clamp(24px, 5vw, 40px); min-height: 2.2em; }
+@media (max-width: 520px) { .lines li { grid-template-columns: 24px minmax(0, 1fr); } .lines li .row { grid-column: 1 / -1; justify-content: flex-end; } }
+.review { display: grid; gap: 14px; }
+.grade { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.grade .big-score { font-family: var(--display); font-weight: 800; font-size: 46px; color: var(--gold); line-height: 1; }
+.grade .gt { font-family: var(--display); font-weight: 700; font-size: 20px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stats div { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 2px; }
+.stats b { font-family: var(--display); font-size: 22px; }
+.stats span { font-size: 12px; color: var(--muted); }
+.fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fixes li { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; }
+.fixes .fl { font-family: var(--display); font-weight: 700; }
+.fixes .fa { font-size: 14px; color: var(--muted); }
 .cue { font-family: var(--display); font-weight: 600; font-size: clamp(16px, 2.4vw, 20px); color: var(--accent); min-height: 1.5em; text-align: center; }
 @media (max-width: 600px) { .stepper li { font-size: 11px; } }
 @media (max-width: 600px) { .ctl-grid { grid-template-columns: 1fr; } .big { width: 100%; } }
@@ -234,6 +260,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <div class="tiles">
       <button class="tile hero" type="button" data-go="record"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></span><b>Record the song</b><span>Whole song or quick in parts. The app tunes and mixes it for you.</span></button>
       <button class="tile" type="button" data-go="lesson"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><b>Singing lesson</b><span>7 short lessons with your coach. About 10 minutes.</span></button>
+      <button class="tile" type="button" data-go="lines"><span class="badge2" id="menuLinesN"></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/><path d="M21 16V6"/></svg></span><b>Sing line by line</b><span>A few words at a time. Redo any line, and the app pieces it together.</span></button>
       <button class="tile" type="button" data-go="takes"><span class="badge2" id="menuTakesN"></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><b>My takes</b><span id="menuTakesTxt">Listen to and save your recordings.</span></button>
       <button class="tile" type="button" data-go="recs" id="menuRecs" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 13 3.5 3.5 0 0 0 6 19z"/></svg></span><b>All recordings</b><span>Every take sent to Nathaniel, online.</span></button>
       <button class="tile" type="button" data-go="lyrics"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><b>Lyrics</b><span>All twelve verses of the Twelve Days of Healing.</span></button>
@@ -241,6 +268,21 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="tourAgain" type="button">Take the tour again</button></div>
+  </section>
+
+  <!-- LINE BY LINE -->
+  <section id="scrLines" class="card" hidden>
+    <h2>Sing it line by line</h2>
+    <div class="coach"><div class="avatar" aria-hidden="true">♪</div><div class="bubble"><span class="who">Your vocal coach</span>
+      <p>No pressure, just one line at a time. Tap ● next to a line: you'll hear a short count-in with the music, then sing that line while the words light up. Listen back with ▶, and redo any line as often as you like. When every line has a gold ✓, tap <b>Make my song</b> and I'll piece them all into the twelve verses.</p></div></div>
+    <div class="row" style="justify-content:space-between"><span class="note" id="linesProg">Getting the music ready…</span><button class="big" id="linesMake" type="button" disabled style="font-size:18px;padding:12px 20px">Make my song</button></div>
+    <div class="line-stage" id="lineStage" hidden>
+      <span class="verse" id="lineStageLbl">Get ready…</span>
+      <div class="l-cur" id="lineCur"></div>
+      <div class="row" style="justify-content:center"><span class="rec" id="lineRec"><i></i> Recording</span><button class="btn" id="lineStop" type="button">■ Stop</button></div>
+    </div>
+    <p class="msg" id="linesMsg"></p>
+    <ul class="lines" id="linesList"></ul>
   </section>
 
   <!-- MY TAKES -->
@@ -287,7 +329,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <p>All true healing comes from Him, the heart of the work you do every day.</p></div>
     </div>
     <div class="row"><button class="big" id="peaceBtn" type="button">Amen. I'm ready to begin</button></div>
-    <p class="note" style="opacity:.6">App version 14 · New verses</p>
+    <p class="note" style="opacity:.6">App version 16 · Coach review</p>
     <p class="note">Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.</p>
   </section>
 
@@ -450,6 +492,10 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
         <button type="button" data-ab="before" aria-pressed="false">Before tuning</button>
       </div>
       <p class="msg" id="alignMsg"></p>
+    </div>
+    <div class="card review" id="reviewCard">
+      <h2>Coach's review</h2>
+      <div id="reviewBody"></div>
     </div>
     <div class="card">
       <h2>Adjust the sound</h2>
@@ -849,9 +895,10 @@ const downloadsP = (window.claude && typeof window.claude.use === 'function') ? 
 function ctx() { if (!K.ctx) { const AC = window.AudioContext || window.webkitAudioContext; K.ctx = new AC(); } return K.ctx; }
 function show(id) {
   if (id !== 'scrLesson') { stopLessonAudio(); hush(); if (K.lessonMic) { stopStream(K.lessonMic); K.lessonMic = null; audioSession('playback'); } }
+  if (id !== 'scrLines' && typeof stopLineAudio === 'function') { stopLineAudio(); if (lineCap) { try { lineCap.ms.disconnect(); lineCap.sp.disconnect(); } catch (e) {} lineCap = null; lineBusy = false; $('lineStage').hidden = true; } }
   if (id !== 'scrReady' && K.testMic) { cancelAnimationFrame(micRaf); stopStream(K.testMic); K.testMic = null; }
-  ['scrMenu', 'scrTakes', 'scrLyrics', 'scrRecs', 'scrCoachRec', 'scrPeace', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
-  const n = { scrMenu: -1, scrTakes: -1, scrLyrics: -1, scrRecs: -1, scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
+  ['scrLines', 'scrMenu', 'scrTakes', 'scrLyrics', 'scrRecs', 'scrCoachRec', 'scrPeace', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
+  const n = { scrLines: -1, scrMenu: -1, scrTakes: -1, scrLyrics: -1, scrRecs: -1, scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
   document.querySelectorAll('#stepper li').forEach((li, i) => li.className = i < n ? 'done' : i === n ? 'on' : '');
   $('stepper').hidden = n === -1;
   $('menuBtn').hidden = ['scrMenu', 'scrSing', 'scrProcess', 'scrCoachRec'].includes(id) || (id === 'scrPeace' && !visited());
@@ -1302,6 +1349,7 @@ function go(where) {
   if (where === 'record') show('scrReady');
   else if (where === 'lesson') { lsn = 0; show('scrLesson'); renderLesson(); speak(LESSONS[0].say); }
   else if (where === 'takes') { renderTakes(); show('scrTakes'); }
+  else if (where === 'lines') { show('scrLines'); openLines(); }
   else if (where === 'recs') { show('scrRecs'); loadRecordings(); }
   else if (where === 'lyrics') { renderLyrics(); show('scrLyrics'); }
   else if (where === 'note') show('scrStart');
@@ -1641,8 +1689,10 @@ async function processVocal(lagMin, lagMax) {
     $('pSeek').max = K.music.duration.toFixed(1);
     K.pl.pos = 0; updTime();
     if (K.fromTake) { K.curTake = K.fromTake; K.fromTake = null; renderTakes(); } else addTake();
+    K.lineMode = false;
     const ct = K.takes.find(x => x.id === K.curTake);
     $('resultTitle').innerHTML = ct ? `You did it, <em>Hannah</em> · ${ct.name}` : 'You did it, <em>Hannah</em>';
+    try { renderReview(); } catch (er) { $('reviewBody').innerHTML = '<p class="note">The review isn’t available for this take.</p>'; }
     show('scrResult');
   } catch (e) {
     K.fromTake = null;
@@ -1709,6 +1759,11 @@ async function uploadTake(t) {
     const blob = await renderForCloud();
     const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${encodeURIComponent(cloudName(t))}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'audio/wav' }), body: blob });
     t.cloud = r.ok ? 'sent' : 'failed';
+    if (r.ok) {   // her raw voice (before tuning), small mono 16 kHz, for an in-depth review
+      const raw = K.aligned, sr = K.vsr, n = Math.floor(raw.length * 16000 / sr), b16 = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.max(1, n), 16000).createBuffer(1, Math.max(1, n), 16000), d = b16.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = raw[Math.floor(i * sr / 16000)] || 0;
+      fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${encodeURIComponent(cloudName(t).replace(/\.wav$/, '__raw.wav'))}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'audio/wav' }), body: new Blob([wavBytes(b16)], { type: 'audio/wav' }) }).catch(() => {});
+    }
   } catch (e) { t.cloud = 'failed'; }
   TakeDB.put(t).catch(() => {}); renderTakes();
 }
@@ -1719,7 +1774,7 @@ async function loadRecordings() {
   try {
     const r = await fetch(`${CLOUD.url}/storage/v1/object/list/${CLOUD.bucket}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'name', order: 'desc' } }) });
     if (!r.ok) throw new Error('list ' + r.status);
-    const files = (await r.json()).filter(f => /\.wav$/i.test(f.name));
+    const all = await r.json(), names = new Set(all.map(f => f.name)), files = all.filter(f => /\.wav$/i.test(f.name) && !/__raw\.wav$/i.test(f.name));
     msg.textContent = files.length ? '' : 'No recordings yet. They appear here as soon as Hannah finishes a take.';
     files.forEach(f => {
       const [stamp, name, mode, secs] = f.name.replace(/\.wav$/i, '').split('__');
@@ -1735,7 +1790,7 @@ async function loadRecordings() {
         if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Tap again to delete for good'; setTimeout(() => { if (del.isConnected && del.dataset.sure) { delete del.dataset.sure; del.textContent = 'Delete'; } }, 4000); return; }
         del.disabled = true; del.textContent = 'Deleting…';
         try {
-          const d = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, { method: 'DELETE', headers: cloudHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: [f.name] }) });
+          const d = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, { method: 'DELETE', headers: cloudHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: [f.name].concat(names.has(f.name.replace(/\.wav$/, '__raw.wav')) ? [f.name.replace(/\.wav$/, '__raw.wav')] : []) }) });
           const out = d.ok ? await d.json().catch(() => []) : null;
           if (!d.ok || (Array.isArray(out) && !out.length)) throw new Error('not deleted');
           li.remove(); toast('Recording deleted.'); loadRecordings();
@@ -1743,7 +1798,7 @@ async function loadRecordings() {
       };
       ul.appendChild(li);
     });
-    const used = files.reduce((a, f) => a + ((f.metadata && f.metadata.size) || 0), 0);
+    const used = all.reduce((a, f) => a + ((f.metadata && f.metadata.size) || 0), 0);
     if (files.length) msg.textContent = `${files.length} recording${files.length === 1 ? '' : 's'} · using ${(used / 1048576).toFixed(0)} MB of the free 1,000 MB.`;
   } catch (e) { msg.textContent = 'The recordings couldn’t be loaded. Check the internet connection and press Refresh.'; msg.classList.add('err'); }
 }
@@ -1767,7 +1822,7 @@ const KEYNAME = { '-2': 'E♭', '0': 'F', '2': 'G' };
 function takeMeta(t) {
   const d = new Date(t.created), when = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   const cl = !cloudOn() ? '' : t.cloud === 'sent' ? ' · ✓ sent to Nathaniel' : t.cloud === 'sending' ? ' · sending to Nathaniel…' : t.cloud === 'failed' ? ' · not sent yet' : '';
-  return `${t.mode === 'parts' ? 'In parts' : 'Whole song'} · ${KEYNAME[t.shift] || 'F'} major · ${fmtT(t.dur)} · ${when}${t.saved === false ? ' · this session only' : ''}${cl}`;
+  return `${t.mode === 'lines' ? 'Line by line' : t.mode === 'parts' ? 'In parts' : 'Whole song'} · ${KEYNAME[t.shift] || 'F'} major · ${fmtT(t.dur)} · ${when}${t.saved === false ? ' · this session only' : ''}${cl}`;
 }
 function renderTakes() { renderTakesInto($('takesList')); renderTakesInto($('takesList2')); if (!$('scrMenu').hidden) renderMenu(); }
 function renderTakesInto(ul) {
@@ -1799,7 +1854,7 @@ function renderTakesStart() {
 }
 async function addTake() {
   const num = K.takes.reduce((a, t) => Math.max(a, t.num || 0), 0) + 1;
-  const t = { id: Date.now() + '-' + num, num, name: 'Take ' + num, mode: K.rec.parts ? 'parts' : 'full', shift: K.shift, vsr: K.vsr, pcm: toI16(K.vocal), lag: K.lagAuto, created: Date.now(), dur: K.vocal.length / K.vsr };
+  const t = { id: Date.now() + '-' + num, num, name: 'Take ' + num, mode: K.lineMode ? 'lines' : K.rec.parts ? 'parts' : 'full', shift: K.shift, vsr: K.vsr, pcm: toI16(K.vocal), lag: K.lagAuto, created: Date.now(), dur: K.vocal.length / K.vsr };
   K.takes.push(t); K.curTake = t.id; renderTakes(); renderTakesStart();
   notifyNathaniel('Hannah just recorded her song!', `${t.name}: ${t.mode === 'parts' ? 'quick, in parts' : 'whole song'}, ${fmtT(t.dur)} long. Ask her to play it for you!`);
   try { await TakeDB.put(t); t.saved = true; } catch (e) { t.saved = false; }
@@ -1808,15 +1863,193 @@ async function addTake() {
 }
 function setShift(v) { K.shift = v; document.querySelectorAll('[data-shift]').forEach(x => x.setAttribute('aria-pressed', +x.dataset.shift === v)); }
 function setMode(parts) { K.parts = parts; document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', (x.dataset.mode === 'parts') === parts)); $('partsBrief').hidden = !parts; $('fullBrief').hidden = parts; }
+/* ---------- sing it line by line: record each of the 28 pieces separately, then splice like "in parts" ---------- */
+function partsTrack() { const keep = K.parts; K.parts = true; const p = prepareRec(); K.parts = keep; return p; }
+let LINES = null, lineBusy = false, lineRaf = 0, lineSrc = null, lineCap = null;
+K.lineTakes = {};
+TakeDB.all().then(list => { const L = (list || []).find(t => t.id === 'lines-v1'); if (L && L.lines) Object.entries(L.lines).forEach(([i, x]) => K.lineTakes[i] = { pcm: fromI16(x.pcm), sr: x.sr }); renderMenuLines(); }).catch(() => {});
+function saveLines() {
+  const o = {}; Object.entries(K.lineTakes).forEach(([i, x]) => o[i] = { pcm: toI16(x.pcm), sr: x.sr });
+  TakeDB.put({ id: 'lines-v1', lines: o }).catch(() => {});
+}
+function renderMenuLines() { const n = Object.keys(K.lineTakes).length; const e = $('menuLinesN'); if (e) e.textContent = n ? `${n} of 28` : ''; }
+function buildLines(R) {
+  const M = R.marks, N = R.notes;
+  return M.map((m, i) => {
+    const nextT = i + 1 < M.length ? M[i + 1].t : m.t + 6;
+    const ns = N.filter(([on]) => on >= m.t - 0.02 && on < nextT - 0.02), lastEnd = ns.length ? Math.max(...ns.map(([o, d]) => o + d)) : m.t + 2;
+    return { i, v: m.v, line: m.line, part: m.part, a: Math.max(0, m.t - 0.3), b: Math.min(nextT - 0.04, lastEnd + 0.35), text: lineText(m.v, m.line) };
+  });
+}
+const PART_TITLE = { open: 'Part 1 · the opening lines', early: 'Part 2 · the early countdown (verses 2–4)', late: 'Part 3 · the big countdown (verses 5–12)' };
+function renderLines() {
+  const ul = $('linesList'); if (!LINES) return; ul.innerHTML = ''; let lastPart = '';
+  LINES.forEach(L => {
+    if (L.part !== lastPart) { const h = document.createElement('li'); h.className = 'hdr'; h.innerHTML = `<h3>${PART_TITLE[L.part]}</h3>`; ul.appendChild(h); lastPart = L.part; }
+    const has = !!K.lineTakes[L.i], li = document.createElement('li'); li.className = has ? 'done' : ''; li.id = 'ln' + L.i;
+    li.innerHTML = `<span class="ck">${has ? '✓' : ''}</span><span class="lt"></span><span class="row"><button class="btn" type="button" data-rec="${L.i}">● ${has ? 'Redo' : 'Record'}</button>${has ? `<button class="btn" type="button" data-hear="${L.i}" aria-label="Listen">▶</button>` : ''}</span>`;
+    li.querySelector('.lt').textContent = L.text; ul.appendChild(li);
+  });
+  const n = Object.keys(K.lineTakes).filter(k => LINES[k]).length;
+  $('linesProg').textContent = `${n} of ${LINES.length} lines recorded` + (n && n < LINES.length ? ' · missing lines will be left silent' : '');
+  $('linesMake').disabled = n === 0 || lineBusy; renderMenuLines();
+}
+async function openLines() {
+  $('linesMsg').textContent = ''; $('linesProg').textContent = 'Getting the music ready…';
+  const R = await partsTrack(); LINES = buildLines(R); renderLines();
+}
+document.addEventListener('click', e => {
+  const r = e.target.closest('[data-rec]'); if (r && !lineBusy) { recordLine(+r.dataset.rec); return; }
+  const h = e.target.closest('[data-hear]'); if (h && !lineBusy) hearLine(+h.dataset.hear);
+});
+function stopLineAudio() { if (lineSrc) { try { lineSrc.stop(); } catch (e) {} lineSrc = null; } cancelAnimationFrame(lineRaf); }
+function hearLine(i) {
+  const x = K.lineTakes[i]; if (!x) return; const c = ctx(); c.resume(); stopLineAudio();
+  const b = c.createBuffer(1, x.pcm.length, x.sr); b.copyToChannel(x.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(); lineSrc = s;
+}
+async function recordLine(i) {
+  const L = LINES[i], c = ctx(); try { await c.resume(); } catch (e) {}
+  stopLineAudio(); hush(); $('linesMsg').classList.remove('err');
+  if (!K.lineMic) { $('linesMsg').textContent = 'Asking for the microphone… tap Allow.'; K.lineMic = await getMic(); }
+  if (!K.lineMic) { $('linesMsg').textContent = 'This needs the microphone. Open the app from your Home Screen icon (or the GitHub link in Safari) and allow the microphone.'; $('linesMsg').classList.add('err'); return; }
+  $('linesMsg').textContent = ''; lineBusy = true; renderLines(); document.getElementById('ln' + i).classList.add('now');
+  const R = await partsTrack(), playFrom = Math.max(0, L.a - 2.4), playTo = L.b + 0.4;
+  const chunks = []; let recT0 = 0;
+  const ms = c.createMediaStreamSource(K.lineMic), sp = c.createScriptProcessor(4096, 1, 1), z = c.createGain(); z.gain.value = 0;
+  sp.onaudioprocess = e => { if (!chunks.length) recT0 = c.currentTime - 4096 / c.sampleRate; chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+  ms.connect(sp); sp.connect(z); z.connect(c.destination); lineCap = { ms, sp, z };
+  const src = c.createBufferSource(); src.buffer = R.buf; src.connect(c.destination);
+  const when = c.currentTime + 0.4; src.start(when, playFrom, playTo - playFrom); lineSrc = src;
+  $('lineStage').hidden = false; $('lineStage').scrollIntoView({ block: 'center' }); setCur($('lineCur'), L.text); setProg($('lineCur'), 0);
+  const first = R.marks[i];
+  const tick = () => {
+    const t = audioNow(c) - when + playFrom;
+    if (t < first.t - 0.05) { const left = first.t - t; $('lineStageLbl').textContent = left > 0.5 ? `Sing in ${Math.ceil(left - 0.3)}…` : 'Sing!'; }
+    else $('lineStageLbl').textContent = 'Sing!';
+    const st = kState(Math.max(t, first.t), R.marks, R.notes); setProg($('lineCur'), st.i === i ? st : (t > first.t ? 100 : 0));
+    lineRaf = requestAnimationFrame(tick);
+  };
+  tick();
+  const done = () => {
+    if (!lineCap) return; cancelAnimationFrame(lineRaf);
+    try { lineCap.ms.disconnect(); lineCap.sp.disconnect(); lineCap.z.disconnect(); } catch (e) {} lineCap = null;
+    try { src.stop(); } catch (e) {} lineSrc = null; $('lineStage').hidden = true; lineBusy = false;
+    const n = chunks.reduce((a, b) => a + b.length, 0), x = new Float32Array(n); let o = 0; chunks.forEach(ch => { x.set(ch, o); o += ch.length; });
+    const sr = c.sampleRate, off = recT0 - when + playFrom;                 // song time of the recording's first sample
+    const s0 = Math.max(0, Math.round((L.a - off) * sr)), s1 = Math.min(n, Math.round((L.b - off) * sr));
+    if (s1 - s0 < sr * 0.3) { $('linesMsg').textContent = 'That was too short. Tap ● and sing the whole line.'; renderLines(); return; }
+    const seg = x.slice(s0, s1); let e2 = 0; for (let k = 0; k < seg.length; k++) e2 += seg[k] * seg[k];
+    if (Math.sqrt(e2 / seg.length) < 0.004) { $('linesMsg').textContent = 'I couldn’t hear you on that one. Sing a little closer to the phone and try again.'; $('linesMsg').classList.add('err'); renderLines(); return; }
+    K.lineTakes[i] = { pcm: seg, sr }; saveLines();
+    $('linesMsg').textContent = `Got it! “${L.text}” is saved. Tap ▶ to listen, or ● Redo.`; renderLines();
+    const nextUndone = LINES.find(l => !K.lineTakes[l.i]); if (nextUndone) document.getElementById('ln' + nextUndone.i).scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+  src.onended = done; $('lineStop').onclick = done;
+}
+$('linesMake').addEventListener('click', async () => {
+  if (lineBusy) return; const R = await partsTrack(); if (!LINES) LINES = buildLines(R);
+  const sr = (Object.values(K.lineTakes)[0] || {}).sr || 48000, dur = startsOf(partsSong()) * 60 / K.bpm + 3, out = new Float32Array(Math.ceil(dur * sr)), F = Math.round(0.02 * sr);
+  LINES.forEach(L => {
+    const x = K.lineTakes[L.i]; if (!x) return; const p0 = Math.round(L.a * sr), seg = x.sr === sr ? x.pcm : x.pcm; // all lines are recorded on the same device
+    for (let k = 0; k < seg.length && p0 + k < out.length; k++) { const w = Math.min(1, k / F, (seg.length - k) / F); out[p0 + k] += seg[k] * w; }
+  });
+  K.vocal = out; K.vsr = sr; K.rec = { bars: partsSong(), parts: true, buf: null, marks: R.marks, notes: R.notes }; K.fromTake = null; K.lineMode = true;
+  processVocal(-0.3, 0.3);
+});
 function useTake(id) {
   const t = K.takes.find(x => x.id === id); if (!t) return;
-  plStop(); K.vocal = fromI16(t.pcm); K.vsr = t.vsr; setShift(t.shift); setMode(t.mode === 'parts');
+  plStop(); K.vocal = fromI16(t.pcm); K.vsr = t.vsr; setShift(t.shift); setMode(t.mode !== 'full');
   const bars = K.parts ? partsSong() : tdSong();
   K.rec = { bars, parts: K.parts, buf: null, marks: null, notes: null }; K.fromTake = id;
   processVocal(t.lag - 0.05, t.lag + 0.05);
 }
-TakeDB.all().then(list => { (list || []).forEach(t => { t.saved = true; if (!K.takes.find(x => x.id === t.id)) K.takes.push(t); }); renderTakesStart(); }).catch(() => {});
+TakeDB.all().then(list => { (list || []).filter(t => !String(t.id).startsWith('lines-')).forEach(t => { t.saved = true; if (!K.takes.find(x => x.id === t.id)) K.takes.push(t); }); renderTakesStart(); }).catch(() => {});
 $('openTakes').addEventListener('click', () => { const last = K.takes.slice().sort((a, b) => b.created - a.created)[0]; if (last) useTake(last.id); });
+
+/* ---------- coach's review: how she actually sang (before tuning), line by line ---------- */
+function lineSpans() {
+  const spb = 60 / K.bpm, out = []; let beat = 0;
+  tdSong().forEach(b => {
+    if (b.line !== undefined && b.v >= 1 && b.v <= 12) {
+      const lead = b.line === 'open' ? 1 : b.line === 1 ? (b.v === 1 ? 0.5 : 1) : 0;
+      out.push({ v: b.v, line: b.line, t: (beat - lead) * spb });
+    }
+    beat += b.beats;
+  });
+  out.forEach((o, i) => o.end = i + 1 < out.length ? out[i + 1].t : o.t + 6);
+  return out;
+}
+function partsIndex(v, line) {
+  if (line === 'open') return v - 1;
+  if (v <= 4) return { 4: 12, 3: 13, 2: 14, 1: 15 }[line];
+  return line === 1 ? 27 : 16 + (12 - line);
+}
+function coachReview() {
+  const fr = K.afr, exp = K.exp, hop = fr.hopSec, spans = lineSpans(), lines = [];
+  spans.forEach(sp => {
+    const i0 = Math.floor(sp.t / hop), i1 = Math.min(exp.length, Math.floor(sp.end / hop));
+    let n = 0, voiced = 0, good = 0, bias = 0, loud = 0, fe = -1, fv = -1;
+    for (let i = i0; i < i1; i++) {
+      if (!exp[i]) continue; n++; if (fe < 0) fe = i;
+      const m = fr.midi[i]; if (isNaN(m)) continue;
+      voiced++; loud += fr.rms[i] || 0; let d = m - exp[i]; d -= 12 * Math.round(d / 12); bias += d; if (Math.abs(d) < 0.5) good++;
+    }
+    // her entry: the first moment voice STARTS (after a gap) near the line's first note, not a held note from the line before
+    if (fe >= 0) for (let i = Math.max(1, fe - Math.round(0.35 / hop)); i < Math.min(fr.midi.length, fe + Math.round(0.26 / hop)); i++) {
+      const m = fr.midi[i]; if (isNaN(m) || !isNaN(fr.midi[i - 1])) continue;
+      let d = m - exp[fe]; d -= 12 * Math.round(d / 12); if (Math.abs(d) < 2) { fv = i; break; }
+    }
+    if (!n) return;
+    // timing: slide her singing against the line's notes; the best fit tells how early/late she is
+    let best = 0, bestSc = -1, sc0 = 0;
+    for (let sh = -Math.round(0.4 / hop); sh <= Math.round(0.5 / hop); sh++) {
+      let sc = 0;
+      for (let i = i0; i < i1; i++) { const m = fr.midi[i + sh]; if (!exp[i] || isNaN(m)) continue; let d = m - exp[i]; d -= 12 * Math.round(d / 12); if (Math.abs(d) < 0.5) sc++; }
+      if (sh === 0) sc0 = sc; if (sc > bestSc + (sh === 0 ? 0 : 0.5)) { bestSc = sc; best = sh; }
+    }
+    const shiftT = voiced / n >= 0.5 && (bestSc - sc0) > 0.15 * n ? best * hop : 0;
+    lines.push({ shiftT, v: sp.v, line: sp.line, text: lineText(sp.v, sp.line), cover: voiced / n, acc: voiced ? good / voiced : 0, bias: voiced ? bias / voiced * 100 : 0, late: fv >= 0 ? (fv - fe) * hop : null, loud: voiced ? loud / voiced : 0 });
+  });
+  const sung = lines.filter(l => l.cover > 0.15);
+  const med = sung.map(l => l.loud).sort((a, b) => a - b)[Math.floor(sung.length / 2)] || 0;
+  const avg = (arr, f) => arr.length ? arr.reduce((a, l) => a + f(l), 0) / arr.length : 0;
+  const pitch = avg(sung, l => l.acc), cover = avg(lines, l => Math.min(1, l.cover)), bias = avg(sung, l => l.bias);
+  const lateLines = sung.filter(l => (l.shiftT || 0) >= 0.2).length, earlyLines = sung.filter(l => (l.shiftT || 0) <= -0.2).length;
+  lines.forEach(l => {
+    const tips = [];
+    if (l.cover < 0.5) tips.push('Most of this line is missing or too quiet. Sing every word right through to the end of the line.');
+    else if (l.cover < 0.8) tips.push('Some words dropped out. Keep your voice going on the long notes.');
+    if (Math.abs(l.shiftT) >= 0.2) tips.push(l.shiftT > 0 ? `You come in about ${Math.round(l.shiftT * 10) / 10} s late on this line. Take your breath a beat earlier so the first word lands as the gold starts.` : `You start about ${Math.round(-l.shiftT * 10) / 10} s early. Wait for the gold highlight before you sing.`);
+    else if (l.cover >= 0.5 && l.acc < 0.6) tips.push(l.bias < -25 ? 'You’re singing under the notes here. Lift your eyebrows and think “up”, and listen for the flute.' : l.bias > 25 ? 'You’re pushing a little over the notes. Relax your jaw and let the notes settle.' : 'The notes wander on this line. Listen to the flute once, then sing it back slowly.');
+    if (med && l.cover >= 0.5 && l.loud < med * 0.5) tips.push('This line is much quieter than the rest. Give it the same energy.');
+    l.tips = tips; l.score = 0.55 * Math.min(1, l.acc) + 0.45 * Math.min(1, l.cover) - (Math.abs(l.shiftT) >= 0.2 ? 0.15 : 0);
+  });
+  const overall = Math.round(100 * (0.55 * pitch + 0.45 * cover) - Math.min(10, (lateLines + earlyLines) * 0.5));
+  return { overall, pitch, cover, bias, lateLines, earlyLines, lines };
+}
+function renderReview() {
+  const R = coachReview(), body = $('reviewBody');
+  const nFix = R.lines.filter(l => l.tips.length).length;
+  const grade = R.overall >= 85 && nFix === 0 ? 'Studio-ready. Beautiful work!' : R.overall >= 85 ? `Great take! Touch up ${nFix} line${nFix === 1 ? '' : 's'} and it’s studio-ready.` : R.overall >= 70 ? 'Very good, just a few touch-ups.' : R.overall >= 50 ? 'Good start. Let’s polish a few lines.' : 'Let’s work on it line by line.';
+  const bad = R.lines.filter(l => l.tips.length).sort((a, b) => a.score - b.score).slice(0, 5);
+  const strengths = [];
+  if (R.pitch >= 0.8) strengths.push('your notes are really accurate');
+  if (R.cover >= 0.9 && !R.lines.some(l => l.cover < 0.5)) strengths.push('you sang every word');
+  if (R.lateLines + R.earlyLines <= 2) strengths.push('your timing is right with the band');
+  if (Math.abs(R.bias) < 15) strengths.push('your tuning is nicely centred');
+  const overallTip = R.bias < -25 ? 'Overall you tend to sing slightly flat (under the note), which is very common when singing quietly. Stand up, smile and give it a bit more air.' : R.bias > 25 ? 'Overall you tend to sing slightly sharp (over the note), usually from pushing. Relax and let the notes float.' : '';
+  body.innerHTML = `
+    <div class="grade"><span class="big-score">${Math.max(0, R.overall)}</span><span class="gt">${grade}</span></div>
+    <div class="stats"><div><b>${Math.round(R.pitch * 100)}%</b><span>notes on pitch (before tuning)</span></div><div><b>${Math.round(R.cover * 100)}%</b><span>of the song sung</span></div><div><b>${R.lateLines + R.earlyLines}</b><span>lines early or late</span></div></div>
+    ${strengths.length ? `<p><b>What’s working:</b> ${strengths.join(', ')}.</p>` : ''}
+    ${overallTip ? `<p class="note">${overallTip}</p>` : ''}
+    ${bad.length ? `<p><b>Top things to adjust</b></p><ul class="fixes">${bad.map(l => `<li><span class="fl">Verse ${l.v}: “${escH(l.text)}”</span>${l.tips.map(t => `<span class="fa">${escH(t)}</span>`).join('')}<span><button class="btn" type="button" data-fix="${partsIndex(l.v, l.line)}">Fix this line</button></span></li>`).join('')}</ul>` : '<p>Nothing to fix. Every line is on pitch and on time. 🎉</p>'}
+    <p class="note">Remember: the app already tunes every note in the finished song. These tips make your own singing shine even more.</p>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-fix]'); if (!b) return;
+  plStop(); show('scrLines'); openLines().then(() => { const li = document.getElementById('ln' + b.dataset.fix); if (li) { li.classList.add('now'); li.scrollIntoView({ block: 'center' }); } });
+});
 
 /* ---------- result player ---------- */
 function mixGraph(c, startAt, offset, withMusic) {
