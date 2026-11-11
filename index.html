@@ -271,7 +271,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 23</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 24</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1007,7 +1007,7 @@ let LEAD = 0.5;
 function audioNow(c) {
   // the moment the listener is hearing right now, plus her own early/late adjustment
   let t;
-  if (c.getOutputTimestamp) { const ts = c.getOutputTimestamp(); t = ts.contextTime + Math.max(0, (performance.now() - ts.performanceTime) / 1000); if (!(t > 0)) t = c.currentTime - (c.outputLatency || 0); }
+  if (c.getOutputTimestamp) { const ts = c.getOutputTimestamp(); t = ts.performanceTime > 0 && ts.contextTime > 0 ? ts.contextTime + Math.max(0, Math.min(0.5, (performance.now() - ts.performanceTime) / 1000)) : NaN; if (!(t > 0)) t = c.currentTime - (c.outputLatency || 0); }
   else t = c.currentTime - (c.outputLatency || 0) - (c.baseLatency || 0);
   return t - K.lyrOff;
 }
@@ -1080,8 +1080,15 @@ function playClip(text) { if (tts) return false; const k = clipKeyFor(text); ret
 if (window.COACH_CLIPS) $('ttsBtn').hidden = false;
 // iPhone: let sound play even with the silent switch on, and allow the mic while recording
 function audioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {} }
+async function liveCtx() {                 // an AudioContext that is really running; iPhone can leave one stuck ("interrupted"), and then resume() never finishes
+  const wait = (c) => Promise.race([c.resume().catch(() => {}), new Promise(r => setTimeout(r, 400))]);
+  let c = ctx(); if (c.state === 'running') return c;
+  await wait(c); if (c.state === 'running') return c;
+  if (!micBusy()) { try { c.close(); } catch (e) {} K.ctx = null; c = ctx(); await wait(c); }
+  return c;
+}
 function toSpeaker() {                    // after the mic closes: switch back to media playback and restart the audio so iOS re-routes it to the loudspeaker
-  setTimeout(() => { if (micBusy()) return; audioSession('playback'); const c = K.ctx; if (c && c.state === 'running' && c.suspend) c.suspend().then(() => c.resume()).catch(() => {}); }, 250);
+  setTimeout(() => { if (micBusy()) return; audioSession('playback'); }, 250);
 }
 function micBusy() { return !!(lineCap || (typeof verseCap !== 'undefined' && verseCap) || K.testMic || K.lessonMic || (K.mic && K.mic.active)); }
 function playMode() {                       // make sure sound comes out loud, from the speaker/earbuds
@@ -1160,7 +1167,7 @@ function runBreath() {
   cycle();
 }
 async function playScale() {
-  playMode(); const c = ctx(); try { await c.resume(); } catch (e) {}
+  playMode(); const c = await liveCtx();
   stopLessonAudio();
   const base = 60 + K.shift + 2, pat = [0, 2, 4, 5, 7, 5, 4, 2, 0], step = 0.34; let t = c.currentTime + 0.2;
   [0, 2, 3].forEach(up => {
@@ -1180,7 +1187,7 @@ function tone(m, t, len, lvl) {
   o.start(t); o2.start(t); o.stop(t + len * 3); o2.stop(t + len * 3); lsnAudio.push(o, o2);
 }
 async function trySnip(k) {
-  const c = ctx(); try { await c.resume(); } catch (e) {}
+  const c = await liveCtx();
   $('fbBox').hidden = false; $('fbBody').innerHTML = '<p>Getting the microphone… say Allow.</p>';
   if (!K.lessonMic) K.lessonMic = await getMic();
   if (!K.lessonMic) { $('fbBody').innerHTML = '<p>I need the microphone to listen. Open the app file in Chrome on a laptop for feedback. You can still practise along with ▶ Play.</p>'; return; }
@@ -1226,10 +1233,11 @@ async function trySnip(k) {
   if (!said && tts) tts.speak(`${head} ${pct} percent of your notes landed right on pitch. ${tend}`, { voice: 'airy', language: 'en' }).catch(() => {});
 }
 async function playSnip(k) {
-  playMode(); const c = ctx(); try { await c.resume(); } catch (e) {}
+  playMode(); const c = await liveCtx();
   stopLessonAudio(); await prepareGuided();
   const [a, b] = snipRange(k), s = c.createBufferSource(); s.buffer = K.guided; s.connect(c.destination);
   const when = c.currentTime + 0.1; s.start(when, Math.max(0, a), b - a); lsnAudio.push(s);
+  $('snipMsg').textContent = 'Playing…'; const t0 = c.currentTime; setTimeout(() => { if (c.currentTime - t0 < 0.3) $('snipMsg').innerHTML = '<b>The sound seems stuck.</b> Close the app completely (swipe it away), reopen it, and try again.'; }, 1500);
   const M = K.marks; let last = -2;
   const tick = () => {
     const t = audioNow(c) - when + a;
@@ -1398,7 +1406,7 @@ async function getMic() {
 function stopStream(st) { if (st) st.getTracks().forEach(t => t.stop()); }
 let micRaf = 0;
 $('micTest').addEventListener('click', async () => {
-  const c = ctx(); try { await c.resume(); } catch (e) {}
+  const c = await liveCtx();
   $('micMsg').textContent = 'Asking for the microphone… say Allow.';
   stopStream(K.testMic); cancelAnimationFrame(micRaf);
   const st = await getMic(); K.testMic = st;
@@ -1423,7 +1431,7 @@ async function keepAwake(on) {
 /* ---------- singing ---------- */
 let raf = 0, idx = -1;
 async function startSinging() {
-  const c = ctx(); try { await c.resume(); } catch (e) {}
+  const c = await liveCtx();
   $('startBtn').disabled = true; $('startBtn').textContent = 'Getting ready…';
   cancelAnimationFrame(micRaf); stopStream(K.testMic); K.testMic = null;
   K.mic = await getMic();
@@ -1921,7 +1929,7 @@ function hearLine(i) {
   const b = c.createBuffer(1, x.pcm.length, x.sr); b.copyToChannel(x.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(); lineSrc = s;
 }
 async function recordLine(i) {
-  const L = LINES[i], c = ctx(); try { await c.resume(); } catch (e) {}
+  const L = LINES[i], c = await liveCtx();
   stopLineAudio(); hush(); $('linesMsg').classList.remove('err');
   if (!K.lineMic) { $('linesMsg').textContent = 'Asking for the microphone… tap Allow.'; K.lineMic = await getMic(); }
   if (!K.lineMic) { $('linesMsg').textContent = 'This needs the microphone. Open the app from your Home Screen icon (or the GitHub link in Safari) and allow the microphone.'; $('linesMsg').classList.add('err'); return; }
@@ -2016,7 +2024,7 @@ function hearVerse(v) {
   const b = c.createBuffer(1, x.pcm.length, x.sr); b.copyToChannel(x.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(); verseSrc = s;
 }
 async function recordVerse(v) {
-  const V = VERSES.find(x => x.v === v), c = ctx(); try { await c.resume(); } catch (e) {}
+  const V = VERSES.find(x => x.v === v), c = await liveCtx();
   stopVerseAudio(); hush(); $('versesMsg').classList.remove('err');
   if (!K.lineMic) { $('versesMsg').textContent = 'Asking for the microphone… tap Allow.'; K.lineMic = await getMic(); }
   if (!K.lineMic) { $('versesMsg').textContent = 'This needs the microphone. Open the app from your Home Screen icon (or the GitHub link in Safari) and allow the microphone.'; $('versesMsg').classList.add('err'); return; }
@@ -2188,7 +2196,7 @@ function plStop() {
 }
 async function plPlay(from) {
   playMode();
-  const c = ctx(); try { await c.resume(); } catch (e) {}
+  const c = await liveCtx();
   plStop(); const P = K.pl; if (from !== undefined) P.pos = from;
   if (P.pos >= K.music.duration - 0.2) P.pos = 0;
   const when = c.currentTime + 0.05; P.g = mixGraph(c, when, P.pos, true); P.startAt = when - P.pos; P.playing = true;
