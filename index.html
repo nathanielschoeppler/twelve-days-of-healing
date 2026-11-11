@@ -74,8 +74,9 @@ button:focus-visible, .btn:focus-within, input:focus-visible { outline: 2px soli
 @keyframes pulse { 50% { opacity: .3; } }
 .lyrics { display: grid; align-content: center; gap: 18px; text-align: center; padding: 10px 0; }
 .l-prev { font-family: var(--display); font-weight: 600; font-size: clamp(16px, 2.6vw, 22px); color: var(--dim); min-height: 1.3em; }
-.l-cur { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 6vw, 54px); line-height: 1.12; letter-spacing: -0.02em; text-wrap: balance;
-  background: linear-gradient(90deg, var(--gold) var(--p, 0%), var(--ink) var(--p, 0%)); -webkit-background-clip: text; background-clip: text; color: transparent; min-height: 2.3em; display: grid; place-items: center; }
+.l-cur { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 6vw, 54px); line-height: 1.18; letter-spacing: -0.02em; text-wrap: balance; color: var(--ink); min-height: 2.4em; display: grid; place-items: center; }
+/* each word fills on its own, in reading order, so a wrapped line fills row 1 before row 2 */
+.w { background-image: linear-gradient(90deg, var(--gold) var(--wp, 0%), var(--ink) var(--wp, 0%)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
 .l-next { font-family: var(--display); font-weight: 600; font-size: clamp(18px, 3vw, 26px); color: var(--muted); min-height: 1.3em; }
 .count { font-family: var(--display); font-weight: 800; font-size: clamp(64px, 14vw, 120px); color: var(--gold); line-height: 1; }
 .bar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
@@ -196,6 +197,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <p>I love you.</p>
       <span class="sig">Nathaniel</span>
     </div>
+    <div class="row"><button class="btn" id="skipTop" type="button">Skip the lesson, go straight to recording →</button></div>
     <div class="card">
       <h2>Here's the plan</h2>
       <ul class="ready-list">
@@ -268,6 +270,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <div class="activity" id="lsnAct"></div>
     <div class="row" style="justify-content:space-between">
       <button class="btn" id="lsnBack" type="button">← Back</button>
+      <button class="btn" id="lsnSkip2" type="button">Skip to recording →</button>
       <button class="big" id="lsnNext" type="button" style="font-size:18px;padding:12px 22px">Next lesson →</button>
     </div>
   </section>
@@ -795,7 +798,12 @@ function partsSong() {
 function startsOf(bars) { let beat = 0; bars.forEach(b => { b.start = beat; beat += b.beats; }); return beat; }
 function notesOf(bars) {
   const spb = 60 / K.bpm, out = []; let beat = 0;
-  bars.forEach(b => { let mb = 0; b.mel.forEach(([m, d]) => { if (m > 0 && b.v > 0 && b.v < 13) out.push([(beat + mb) * spb, d * spb]); mb += d; }); beat += b.beats; });
+  bars.forEach((b, bi) => {
+    const pickupBar = b.v === 0 && bars[bi + 1] && bars[bi + 1].v === 1;   // the intro's last beat holds verse 1's "On the"
+    let mb = 0;
+    b.mel.forEach(([m, d]) => { if (m > 0 && ((b.v > 0 && b.v < 13) || (pickupBar && mb >= b.beats - 1))) out.push([(beat + mb) * spb, d * spb]); mb += d; });
+    beat += b.beats;
+  });
   return out;
 }
 // where each sung piece of the full song comes from in the parts recording: [destination beat, source beat, length in beats]
@@ -855,18 +863,33 @@ function audioNow(c) {
   else t = c.currentTime - (c.outputLatency || 0) - (c.baseLatency || 0);
   return t - K.lyrOff;
 }
+function switchTimes(M, notes) {
+  // when each line appears: up to LEAD seconds early, but never before the previous line's last note has been sung
+  if (M._sw && M._swN === notes) return M._sw;
+  const sw = M.map((m, j) => {
+    if (j === 0) return m.t - LEAD;
+    const prev = M[j - 1], ns = notes.filter(([on]) => on >= prev.t - 0.02 && on < m.t - 0.02), last = ns[ns.length - 1];
+    const lastDone = last ? last[0] + Math.min(0.3, last[1]) : prev.t;
+    return Math.min(m.t - 0.05, Math.max(m.t - LEAD, lastDone));
+  });
+  M._sw = sw; M._swN = notes; return sw;
+}
 function kState(t, M, notes) {
-  // which line to show (switches LEAD seconds early) and how far the highlight has got
-  let i = -1;
-  while (i + 1 < M.length && M[i + 1].t - LEAD <= t) i++;
+  // which line to show and how far the highlight has got
+  const SW = switchTimes(M, notes); let i = -1;
+  while (i + 1 < M.length && SW[i + 1] <= t) i++;
   if (i < 0) return { i, p: 0 };
-  const cur = M[i], end = M[i + 1] ? M[i + 1].t : cur.t + 4;
+  const cur = M[i], end = M[i + 1] ? M[i + 1].t : cur.t + 4, leave = M[i + 1] ? SW[i + 1] : end;
   const ns = notes.filter(([on]) => on >= cur.t - 0.02 && on < end - 0.02);
-  if (!ns.length) return { i, p: t >= cur.t ? 100 : 0 };
+  if (!ns.length) return { i, p: t >= cur.t ? 100 : 0, n: 0 };
   let k = 0; while (k < ns.length && ns[k][0] <= t) k++;
-  if (k === 0) return { i, p: 0 };
+  if (k === 0) return { i, p: 0, n: ns.length, pos: 0 };
   const [on, du] = ns[k - 1], nextOn = ns[k] ? ns[k][0] : on + du;
-  return { i, p: Math.min(100, ((k - 1) + Math.max(0, Math.min(1, (t - on) / Math.max(0.05, Math.min(du, nextOn - on))))) / ns.length * 100) };
+  // fill each word quickly (max 0.6 s) and always before this line leaves the screen
+  const fillDur = Math.max(0.05, Math.min(du, nextOn - on, 0.6, leave - 0.02 - on));
+  const frac = Math.max(0, Math.min(1, (t - on) / fillDur));
+  // pos = how many notes of this line have been sung so far (fractional)
+  return { i, p: Math.min(100, ((k - 1) + frac) / ns.length * 100), n: ns.length, pos: k - 1 + frac };
 }
 function offsetLabel() { const v = Math.round(K.lyrOff * 1000); return v === 0 ? 'Words on time' : v > 0 ? `Words ${v} ms later` : `Words ${-v} ms earlier`; }
 function nudgeLyrics(d) { K.lyrOff = Math.round(Math.max(-0.6, Math.min(0.6, K.lyrOff + d)) * 10) / 10; try { localStorage.setItem('tdh-lyroff', String(K.lyrOff)); } catch (e) {} document.querySelectorAll('.offLbl').forEach(e => e.textContent = offsetLabel()); }
@@ -1079,15 +1102,15 @@ async function playSnip(k) {
   const M = K.marks; let last = -2;
   const tick = () => {
     const t = audioNow(c) - when + a;
-    if (t > b + 0.3) { $('mCur').style.setProperty('--p', '0%'); $('snipMsg').textContent = 'Nice! Press play again and sing along with it.'; return; }
+    if (t > b + 0.3) { setProg($('mCur'), 0); $('snipMsg').textContent = 'Nice! Press play again and sing along with it.'; return; }
     const st = kState(t, K.marks, fullNotes()), i = st.i;
     if (i !== last) {
       last = i; const cur = M[i], nx = M[i + 1];
       $('mPrev').textContent = M[i - 1] && M[i - 1].t >= a - 0.5 ? lineText(M[i - 1].v, M[i - 1].line) : '';
-      $('mCur').textContent = cur && cur.t >= a - 0.6 ? lineText(cur.v, cur.line) : '♪';
+      if (cur && cur.t >= a - 0.6) setCur($('mCur'), lineText(cur.v, cur.line)); else $('mCur').textContent = '♪';
       $('mNext').textContent = nx && nx.t < b ? lineText(nx.v, nx.line) : '';
     }
-    $('mCur').style.setProperty('--p', (M[i] && M[i].t >= a - 0.6 ? st.p : 0) + '%');
+    setProg($('mCur'), M[i] && M[i].t >= a - 0.6 ? st : 0);
     lsnRaf = requestAnimationFrame(tick);
   };
   tick();
@@ -1128,6 +1151,8 @@ $('skipLesson').addEventListener('click', () => show('scrReady'));
 $('lsnBack').addEventListener('click', () => { if (lsn > 0) { lsn--; hush(); renderLesson(); speak(LESSONS[lsn].say); } });
 $('lsnNext').addEventListener('click', () => { hush(); if (lsn < LESSONS.length - 1) { lsn++; renderLesson(); speak(LESSONS[lsn].say); } else show('scrReady'); });
 $('lsnSkip').addEventListener('click', () => { hush(); show('scrReady'); });
+$('lsnSkip2').addEventListener('click', () => { hush(); show('scrReady'); });
+$('skipTop').addEventListener('click', () => show('scrReady'));
 $('backLesson').addEventListener('click', () => { lsn = LESSONS.length - 1; show('scrLesson'); renderLesson(); });
 
 /* ---------- microphone ---------- */
@@ -1197,6 +1222,31 @@ async function startSinging() {
   idx = -1; loop();
 }
 const PART_NAME = { open: 'Part 1 of 3 · the opening lines', early: 'Part 2 of 3 · the early countdown', late: 'Part 3 of 3 · the big countdown' };
+const escH = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function sylOne(w) {
+  w = w.toLowerCase().replace(/[^a-z]/g, '').replace(/(.)\1+/g, '$1');
+  if (!w) return 0; if (w.length <= 2) return 1;
+  if (/[^aeiouy]ed$/.test(w) && !/[td]ed$/.test(w)) w = w.slice(0, -2); else if (/[^aeiouyl]e$/.test(w)) w = w.slice(0, -1);
+  const m = w.match(/[aeiouy]+/g); return m ? m.length : 1;
+}
+const sylWord = w => Math.max(1, w.split('-').reduce((a, part) => a + (part.replace(/[^a-z]/gi, '').toLowerCase() === 'x' ? 1 : sylOne(part)), 0));
+function setCur(el, text) {
+  // each word knows which syllables (≈ notes) it covers, so it lights up exactly when its first note starts
+  const words = String(text).split(/\s+/).filter(Boolean); let pos = 0;
+  el.innerHTML = '<span>' + words.map(w => `<span class="w">${escH(w)}</span>`).join(' ') + '</span>';
+  el._w = [...el.querySelectorAll('.w')].map((node, i) => { const s = pos, n = sylWord(words[i]); pos += n; return { node, s, e: s + n, v: -1 }; });
+  el._S = Math.max(1, pos);
+}
+function setProg(el, st) {
+  if (!el._w) return;
+  // map notes onto syllables so the first word starts on the first note and the last word on the last note
+  const S = el._S, g = j => st.n <= 1 ? 0 : j >= st.n ? S : j * (S - 1) / (st.n - 1);
+  let f;
+  if (typeof st === 'number') f = st / 100 * S;
+  else if (!st.n) f = st.p >= 100 ? S : 0;
+  else { const j = Math.floor(st.pos), fr = st.pos - j; f = st.n === 1 ? fr * S : g(j) + fr * (g(j + 1) - g(j)); }
+  el._w.forEach(w => { const v = f >= w.e ? 100 : f <= w.s ? 0 : Math.round((f - w.s) / (w.e - w.s) * 100); if (v !== w.v) { w.v = v; w.node.style.setProperty('--wp', v + '%'); } });
+}
 function cueFor(i) {
   const M = K.rec.marks, cur = M[i], next = M[i + 1];
   if (K.rec.parts) {
@@ -1230,7 +1280,7 @@ function loop() {
     else {
       const cur = M[i], prev = M[i - 1], next = M[i + 1];
       $('lPrev').textContent = prev ? lineText(prev.v, prev.line) : '';
-      $('lCur').textContent = lineText(cur.v, cur.line);
+      setCur($('lCur'), lineText(cur.v, cur.line));
       $('lNext').textContent = next ? (!R.parts && next.v !== cur.v ? `Verse ${next.v}…` : lineText(next.v, next.line)) : '';
       $('verseLbl').textContent = R.parts ? PART_NAME[cur.part] : `Verse ${cur.v} of 12`;
     }
@@ -1238,8 +1288,8 @@ function loop() {
   }
   if (i < 0) {
     const left = M[0].t - t;
-    $('lCur').innerHTML = `<span class="count">${left > 0.6 ? Math.ceil(left - 0.5) : '♪'}</span>`;
-  } else $('lCur').style.setProperty('--p', st.p + '%');
+    $('lCur')._w = null; $('lCur').innerHTML = `<span class="count">${left > 0.6 ? Math.ceil(left - 0.5) : '♪'}</span>`;
+  } else setProg($('lCur'), st);
   $('prog').style.width = Math.max(0, Math.min(100, t / dur * 100)) + '%';
   $('sTime').textContent = `${fmtT(t)} / ${fmtT(dur)}`;
   if (K.mic) $('recTime').textContent = fmtT(K.ctx.currentTime - K.recT0);
@@ -1433,6 +1483,12 @@ async function processVocal(lagMin, lagMax) {
   }
 }
 
+/* ---------- tell Nathaniel when Hannah records (push notification via the free ntfy app) ---------- */
+const NOTIFY_TOPIC = 'twelve-days-hannah-76c54e3d2e';
+function notifyNathaniel(title, msg) {
+  try { fetch('https://ntfy.sh/' + NOTIFY_TOPIC, { method: 'POST', body: msg, headers: { Title: title, Tags: 'christmas_tree,microphone' } }).catch(() => {}); } catch (e) {}
+}
+
 /* ---------- takes: every recording is kept (on this computer when the browser allows) ---------- */
 const TakeDB = (() => {
   let dbp = null;
@@ -1478,6 +1534,7 @@ async function addTake() {
   const num = K.takes.reduce((a, t) => Math.max(a, t.num || 0), 0) + 1;
   const t = { id: Date.now() + '-' + num, num, name: 'Take ' + num, mode: K.rec.parts ? 'parts' : 'full', shift: K.shift, vsr: K.vsr, pcm: toI16(K.vocal), lag: K.lagAuto, created: Date.now(), dur: K.vocal.length / K.vsr };
   K.takes.push(t); K.curTake = t.id; renderTakes(); renderTakesStart();
+  notifyNathaniel('Hannah just recorded her song!', `${t.name}: ${t.mode === 'parts' ? 'quick, in parts' : 'whole song'}, ${fmtT(t.dur)} long. Ask her to play it for you!`);
   try { await TakeDB.put(t); t.saved = true; } catch (e) { t.saved = false; }
   renderTakes();
 }
@@ -1576,6 +1633,7 @@ $('saveBtn').addEventListener('click', async () => {
     const ct = K.takes.find(x => x.id === K.curTake), tn = ct ? ' - ' + ct.name : '';
     await saveBlob(`The Twelve Days of Healing${tn}.zip`, zip);
     msg.textContent = 'Saved! The .zip holds the full song and your voice on its own.';
+    notifyNathaniel('Hannah saved her finished song!', `She saved ${ct ? ct.name : 'her song'} as the finished version.`);
   } catch (e) {
     msg.textContent = e && e.code === 'declined' ? 'Save cancelled.' : 'The song could not be saved here. Try again, or open this page in Chrome on a computer.';
     msg.classList.add('err');
@@ -1596,7 +1654,7 @@ $('againBtn').addEventListener('click', () => { plStop(); show('scrReady'); prep
 $('otherBtn').addEventListener('click', () => { plStop(); show('scrUpload'); $('upMsg').textContent = ''; prepareRec().then(r => K.rec = r); });
 
 setTimeout(prepareGuided, 400);
-window.__K = K;
+window.__K = K; window.__S = { notesOf, partsSong, switchTimes, kState, setCur, setProg, sylWord, fullNotes, lineText };
 })();
 </script>
 
