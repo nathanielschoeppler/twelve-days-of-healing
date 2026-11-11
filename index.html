@@ -273,7 +273,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
     <div class="row"><button class="btn del" id="resetPhone" type="button">Reset this phone</button><span class="note">Deletes every take, line and verse saved on this phone and starts the app fresh. Recordings already sent online stay in All recordings.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 27</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 28</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1809,9 +1809,9 @@ async function uploadTake(t) {
     const blob = await renderForCloud();
     const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${encodeURIComponent(cloudName(t))}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'audio/wav' }), body: blob });
     t.cloud = r.ok ? 'sent' : 'failed';
-    if (r.ok) {   // her raw voice (before tuning), small mono 16 kHz, for an in-depth review
-      const raw = K.aligned, sr = K.vsr, n = Math.floor(raw.length * 16000 / sr), b16 = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.max(1, n), 16000).createBuffer(1, Math.max(1, n), 16000), d = b16.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = raw[Math.floor(i * sr / 16000)] || 0;
+    if (r.ok) {   // her raw voice (before tuning) at full studio quality (the phone's own rate, 16-bit mono), for editing and review
+      const raw = K.aligned, sr = K.vsr, n = Math.max(1, raw.length), b16 = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, n, sr).createBuffer(1, n, sr);
+      b16.copyToChannel(raw.length ? raw : new Float32Array(1), 0);
       fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${encodeURIComponent(cloudName(t).replace(/\.wav$/, '__raw.wav'))}`, { method: 'POST', headers: cloudHeaders({ 'Content-Type': 'audio/wav' }), body: new Blob([wavBytes(b16)], { type: 'audio/wav' }) }).catch(() => {});
     }
   } catch (e) { t.cloud = 'failed'; }
