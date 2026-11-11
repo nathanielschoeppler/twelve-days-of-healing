@@ -731,7 +731,7 @@ const K = { takes: [], curTake: null, fromTake: null, lessonMic: null, testMic: 
 const downloadsP = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
 function ctx() { if (!K.ctx) { const AC = window.AudioContext || window.webkitAudioContext; K.ctx = new AC(); } return K.ctx; }
 function show(id) {
-  if (id !== 'scrLesson') { stopLessonAudio(); stopStream(K.lessonMic); K.lessonMic = null; }
+  if (id !== 'scrLesson') { stopLessonAudio(); hush(); if (K.lessonMic) { stopStream(K.lessonMic); K.lessonMic = null; audioSession('playback'); } }
   if (id !== 'scrReady' && K.testMic) { cancelAnimationFrame(micRaf); stopStream(K.testMic); K.testMic = null; }
   ['scrPeace', 'scrStart', 'scrLesson', 'scrReady', 'scrSing', 'scrUpload', 'scrProcess', 'scrResult'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0);
   const n = { scrPeace: 0, scrStart: 0, scrLesson: 0, scrReady: 1, scrSing: 1, scrUpload: 1, scrProcess: 2, scrResult: 3 }[id];
@@ -878,6 +878,19 @@ const LESSONS = [
 let lsn = 0, lsnAudio = [], lsnRaf = 0, breathTimer = 0, coachOn = true, tts = null;
 const ttsP = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('tts').catch(() => null) : Promise.resolve(null);
 ttsP.then(t => { tts = t; if (t) $('ttsBtn').hidden = false; });
+// outside claude.ai (e.g. on her iPhone) the coach uses the device's own built-in voice
+const synth = window.speechSynthesis || null;
+let sysVoice = null;
+function pickVoice() {
+  const vs = synth ? synth.getVoices() : [], en = vs.filter(v => /^en([-_]|$)/i.test(v.lang));
+  const pref = ['Ava (Premium)', 'Ava (Enhanced)', 'Zoe (Premium)', 'Samantha (Enhanced)', 'Allison (Enhanced)', 'Susan (Enhanced)', 'Evan (Enhanced)', 'Samantha', 'Ava', 'Allison', 'Karen', 'Moira',
+    'Microsoft Aria Online (Natural)', 'Microsoft Jenny Online (Natural)', 'Google US English'];
+  for (const n of pref) { const v = en.find(x => x.name === n || x.name.startsWith(n)); if (v) return v; }
+  return en.find(v => /en[-_]US/i.test(v.lang) && v.localService) || en.find(v => /en[-_]US/i.test(v.lang)) || en[0] || null;
+}
+if (synth) { sysVoice = pickVoice(); try { synth.addEventListener('voiceschanged', () => { sysVoice = pickVoice(); }); } catch (e) {} $('ttsBtn').hidden = false; }
+// iPhone: let sound play even with the silent switch on, and allow the mic while recording
+function audioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {} }
 // what the coach voice reads aloud: plain words, no stretched spellings or sound effects it would stumble on
 function speakable(text) {
   return text
@@ -885,8 +898,21 @@ function speakable(text) {
     .replace(/a “sss”/g, 'a long hiss').replace(/on “mmm”/g, 'with an mmm sound').replace(/: “brrr”/g, '').replace(/“brrr”/g, 'a lip trill')
     .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/…/g, '.').replace(/x-ray/g, 'x ray').replace(/\s+/g, ' ').trim();
 }
-function speak(text) { if (tts && coachOn) tts.speak(speakable(text), { voice: 'airy', language: 'en' }).catch(() => {}); }
-function hush() { if (tts) { try { tts.stop(); } catch (e) {} } }
+function speak(text) {
+  if (!coachOn) return;
+  const t = speakable(text);
+  if (tts) { tts.speak(t, { voice: 'airy', language: 'en' }).catch(() => {}); return; }
+  if (!synth) return;
+  try {
+    synth.cancel();
+    // short sentences: some browsers cut off long speech after ~15 seconds
+    (t.match(/[^.!?]+[.!?]*/g) || [t]).map(x => x.trim()).filter(Boolean).forEach(sn => {
+      const u = new SpeechSynthesisUtterance(sn); if (sysVoice) { u.voice = sysVoice; u.lang = sysVoice.lang; } else u.lang = 'en-US';
+      u.rate = 0.97; u.pitch = 1.02; synth.speak(u);
+    });
+  } catch (e) {}
+}
+function hush() { if (tts) { try { tts.stop(); } catch (e) {} } if (synth) { try { synth.cancel(); } catch (e) {} } }
 $('ttsBtn').addEventListener('click', () => { coachOn = !coachOn; $('ttsBtn').textContent = 'Coach voice: ' + (coachOn ? 'on' : 'off'); if (!coachOn) hush(); else speak(LESSONS[lsn].say); });
 function stopLessonAudio() {
   lsnAudio.forEach(n => { try { n.stop(); } catch (e) {} }); lsnAudio = [];
@@ -1024,7 +1050,7 @@ async function playSnip(k) {
   return { a, b, when };
 }
 $('lessonBtn').addEventListener('click', () => { lsn = 0; show('scrLesson'); renderLesson(); speak(LESSONS[0].say); });
-$('peaceBtn').addEventListener('click', () => show('scrStart'));
+$('peaceBtn').addEventListener('click', () => { audioSession('playback'); try { ctx().resume(); } catch (e) {} show('scrStart'); });
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
   setMode(b.dataset.mode === 'parts');
   hush(); speak((K.parts ? $('partsBrief') : $('fullBrief')).querySelector('.bubble').innerText.replace(/^Your vocal coach\s*/i, ''));
@@ -1038,6 +1064,7 @@ $('backLesson').addEventListener('click', () => { lsn = LESSONS.length - 1; show
 
 /* ---------- microphone ---------- */
 async function getMic() {
+  audioSession('play-and-record');
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
     const p = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
@@ -1156,7 +1183,7 @@ function stopRecordingNodes() {
   if (K.mic) { K.mic.getTracks().forEach(t => t.stop()); }
 }
 function finishSinging() {
-  cancelAnimationFrame(raf); keepAwake(false);
+  cancelAnimationFrame(raf); keepAwake(false); setTimeout(() => audioSession('playback'), 300);
   const s = K.src; K.src = null; if (s) { try { s.stop(); } catch (e) {} }
   const hadMic = !!K.mic && K.chunks.length;
   stopRecordingNodes(); K.mic = null;
