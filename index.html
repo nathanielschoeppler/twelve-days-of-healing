@@ -268,7 +268,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 18</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 19</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1362,7 +1362,7 @@ $('backLesson').addEventListener('click', () => { lsn = LESSONS.length - 1; show
 
 /* ---------- microphone ---------- */
 async function getMic() {
-  audioSession('play-and-record');
+  audioSession('auto');                     // play-and-record mode sends sound to the iPhone earpiece; auto keeps the loudspeaker
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
     const p = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
