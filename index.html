@@ -271,7 +271,8 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 25</span></div>
+    <div class="row"><button class="btn del" id="resetPhone" type="button">Reset this phone</button><span class="note">Deletes every take, line and verse saved on this phone and starts the app fresh. Recordings already sent online stay in All recordings.</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 26</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1096,6 +1097,13 @@ function playMode() {                       // make sure sound comes out loud, f
   if (K.lineMic && !lineCap && !verseCap) { stopStream(K.lineMic); K.lineMic = null; }
   if (!micBusy()) audioSession('playback');
 if (window.claude && /iPhone|iPad/.test(navigator.userAgent)) $('inClaude').hidden = false;
+$('resetPhone').addEventListener('click', async () => {
+  if (!confirm('Reset this phone? This deletes every take, line and verse saved in the app on this phone. It can’t be undone. (Recordings already sent online stay in All recordings.)')) return;
+  try { plStop(); } catch (e) {} hush();
+  try { await TakeDB.clear(); } catch (e) {}
+  try { Object.keys(localStorage).filter(k => k.startsWith('tdh-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  location.hash = ''; location.reload();
+});
 $('sndTest').addEventListener('click', () => {
   playMode(); const c = ctx(); let t = c.currentTime + 0.1;
   [72, 76, 79, 84].forEach(m => { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (m - 69) / 12); o.connect(g); g.connect(c.destination);
@@ -1836,7 +1844,7 @@ const TakeDB = (() => {
     try { const r = indexedDB.open('twelve-days-takes', 1); r.onupgradeneeded = () => r.result.createObjectStore('takes', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); }
   }));
   const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('takes', mode), r = fn(t.objectStore('takes')); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); };
-  return { all: () => tx('readonly', st => st.getAll()), put: v => tx('readwrite', st => st.put(v)), del: id => tx('readwrite', st => st.delete(id)) };
+  return { all: () => tx('readonly', st => st.getAll()), put: v => tx('readwrite', st => st.put(v)), del: id => tx('readwrite', st => st.delete(id)), clear: () => tx('readwrite', st => st.clear()) };
 })();
 const toI16 = x => { const o = new Int16Array(x.length); for (let i = 0; i < x.length; i++) { const v = Math.max(-1, Math.min(1, x[i])); o[i] = v < 0 ? v * 32768 : v * 32767; } return o; };
 const fromI16 = x => { const o = new Float32Array(x.length); for (let i = 0; i < x.length; i++) o[i] = x[i] / 32768; return o; };
