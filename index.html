@@ -271,7 +271,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <button class="tile" type="button" data-go="peace" id="tilePeace" hidden><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span><b>Before you begin</b><span>Scripture for a calm heart.</span></button>
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 24</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 25</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -303,6 +303,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <p class="msg" id="versesMsg"></p>
     <ul class="lines" id="versesList"></ul>
+    <div class="row" style="justify-content:center;margin-top:14px"><button class="btn del" id="versesReset" type="button">Start over: delete all days</button></div>
   </section>
 
   <!-- MY TAKES -->
@@ -2003,7 +2004,7 @@ function renderVerses() {
   const ul = $('versesList'); if (!VERSES) return; ul.innerHTML = '';
   VERSES.forEach(V => {
     const has = !!K.verseTakes[V.v], li = document.createElement('li'); li.className = has ? 'done' : ''; li.id = 'vs' + V.v;
-    li.innerHTML = `<span class="ck">${has ? '✓' : ''}</span><span class="lt"><b>Day ${V.v}</b> <span class="note">· ${V.v === 1 ? '1 gift' : V.v + ' gifts'}${V.v === 12 ? ', the whole countdown' : ''} · ${fmtT(V.b - V.a)}</span><br></span><span class="row"><button class="btn" type="button" data-vrec="${V.v}">● ${has ? 'Redo' : 'Record'}</button>${has ? `<button class="btn" type="button" data-vhear="${V.v}" aria-label="Listen">▶</button>` : ''}</span>`;
+    li.innerHTML = `<span class="ck">${has ? '✓' : ''}</span><span class="lt"><b>Day ${V.v}</b> <span class="note">· ${V.v === 1 ? '1 gift' : V.v + ' gifts'}${V.v === 12 ? ', the whole countdown' : ''} · ${fmtT(V.b - V.a)}</span><br></span><span class="row"><button class="btn" type="button" data-vrec="${V.v}">● ${has ? 'Redo' : 'Record'}</button>${has ? `<button class="btn" type="button" data-vhear="${V.v}" aria-label="Listen">▶</button><button class="btn" type="button" data-vdel="${V.v}" aria-label="Delete day ${V.v}">✕ Delete</button>` : ''}</span>`;
     const lt = li.querySelector('.lt'); lt.appendChild(document.createTextNode(V.lines[0])); const rest = document.createElement('span'); rest.className = 'vlines'; rest.textContent = V.lines.slice(1).join('\n'); lt.appendChild(rest); ul.appendChild(li);
   });
   const n = VERSES.filter(V => K.verseTakes[V.v]).length;
@@ -2017,6 +2018,7 @@ async function openVerses() {
 document.addEventListener('click', e => {
   const r = e.target.closest('[data-vrec]'); if (r && !verseBusy) { recordVerse(+r.dataset.vrec); return; }
   const h = e.target.closest('[data-vhear]'); if (h && !verseBusy) hearVerse(+h.dataset.vhear);
+  const d = e.target.closest('[data-vdel]'); if (d && !verseBusy) { const v = +d.dataset.vdel; if (confirm(`Delete your recording of day ${v}? You can record it again any time.`)) { stopVerseAudio(); delete K.verseTakes[v]; saveVerses(); $('versesMsg').textContent = `Day ${v} deleted. Tap ● Record to sing it again.`; renderVerses(); } }
 });
 function stopVerseAudio() { if (verseSrc) { try { verseSrc.stop(); } catch (e) {} verseSrc = null; } cancelAnimationFrame(verseRaf); }
 function hearVerse(v) {
@@ -2064,6 +2066,11 @@ async function recordVerse(v) {
   };
   src.onended = done; $('verseStop').onclick = done;
 }
+$('versesReset').addEventListener('click', () => {
+  if (verseBusy || !Object.keys(K.verseTakes).length) { $('versesMsg').textContent = 'Nothing to delete yet.'; return; }
+  if (!confirm('Delete all your verse-by-verse recordings and start over? Songs you already made stay in My takes.')) return;
+  stopVerseAudio(); K.verseTakes = {}; saveVerses(); $('versesMsg').textContent = 'All clear. Start with day 1 whenever you’re ready.'; renderVerses();
+});
 $('versesMake').addEventListener('click', async () => {
   if (verseBusy) return; const R = await fullTrack(); if (!VERSES) VERSES = buildVerses(R);
   const sr = (Object.values(K.verseTakes)[0] || {}).sr || 48000, dur = startsOf(tdSong()) * 60 / K.bpm + 3, out = new Float32Array(Math.ceil(dur * sr)), F = Math.round(0.03 * sr);
