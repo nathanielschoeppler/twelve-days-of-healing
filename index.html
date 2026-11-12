@@ -273,7 +273,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
     <div class="row"><button class="btn del" id="resetPhone" type="button">Reset this phone</button><span class="note">Deletes every take, line and verse saved on this phone and starts the app fresh. Recordings already sent online stay in All recordings.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 28</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 29</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -1670,18 +1670,23 @@ function targets() {
   }
   return out;
 }
-// quiet the gaps between sung lines (room hiss, breaths, headphone leak) without clipping consonants
+// quiet the gaps between sung lines (room hiss, breaths, headphone leak) without clipping her voice:
+// a frame stays open if a pitch was found nearby OR it is clearly louder than the room noise (soft or breathy singing
+// often has no detectable pitch in a noisy room, and used to get cut)
 function gateGains(afr) {
-  const n = afr.midi.length, hop = afr.hopSec, back = Math.round(0.2 / hop), ahead = Math.round(0.1 / hop), g = new Float32Array(n);
+  const n = afr.midi.length, hop = afr.hopSec, back = Math.round(0.3 / hop), ahead = Math.round(0.15 / hop), g = new Float32Array(n), FLOOR = 0.25;
+  const rs = Array.from(afr.rms || []).filter(v => v > 0).sort((p, q) => p - q), nf = rs.length ? rs[Math.floor(rs.length * 0.2)] : 0;
+  const loud = i => afr.rms && nf > 0 && afr.rms[i] > nf * 2.2;
   let lastV = -1e9; const nextV = new Int32Array(n).fill(1e9);
-  for (let i = n - 1, nv = 1e9; i >= 0; i--) { if (!isNaN(afr.midi[i])) nv = i; nextV[i] = nv; }
-  for (let i = 0; i < n; i++) { if (!isNaN(afr.midi[i])) lastV = i; g[i] = (i - lastV <= back || nextV[i] - i <= ahead) ? 1 : 0.12; }
-  for (let i = 1; i < n; i++) if (g[i] < g[i - 1]) g[i] = g[i - 1] * 0.82 + g[i] * 0.18;          // gentle release
+  for (let i = n - 1, nv = 1e9; i >= 0; i--) { if (!isNaN(afr.midi[i]) || loud(i)) nv = i; nextV[i] = nv; }
+  for (let i = 0; i < n; i++) { if (!isNaN(afr.midi[i]) || loud(i)) lastV = i; g[i] = (i - lastV <= back || nextV[i] - i <= ahead) ? 1 : FLOOR; }
+  for (let i = 1; i < n; i++) if (g[i] < g[i - 1]) g[i] = g[i - 1] * 0.9 + g[i] * 0.1;           // slow, gentle release: no audible fades
+  for (let i = n - 2; i >= 0; i--) if (g[i] < g[i + 1]) g[i] = g[i + 1] * 0.75 + g[i] * 0.25;     // and open slightly early
   return g;
 }
 function applyGate(x, g, hop, sr) {
   const hs = hop * sr, out = new Float32Array(x.length);
-  for (let i = 0; i < x.length; i++) { const f = i / hs, k = Math.floor(f), a = g[Math.min(g.length - 1, k)] || 0.12, b = g[Math.min(g.length - 1, k + 1)] || 0.12; out[i] = x[i] * (a + (b - a) * (f - k)); }
+  for (let i = 0; i < x.length; i++) { const f = i / hs, k = Math.floor(f), a = g[Math.min(g.length - 1, k)] || 0.25, b = g[Math.min(g.length - 1, k + 1)] || 0.25; out[i] = x[i] * (a + (b - a) * (f - k)); }
   return out;
 }
 function retune() {
