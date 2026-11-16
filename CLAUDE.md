@@ -22,6 +22,13 @@ Before running it, look at the take: which days are sung (verse-by-verse takes c
 words match the lyrics, and whether there is talking or noise to cut. Say what you found. If days are missing,
 say so; never invent or copy material without telling him.
 
+## AI singer route (Synthesizer V Studio)
+
+`python3 studio/studio.py`-ready vocals can also come from an AI singer. `python3 studio/make_score.py OUT_DIR` writes
+the melody with her lyrics, one syllable per note (MusicXML for import; MIDI backup using SynthV "+"/"-"), on the
+app's grid starting at 0:00. He imports it, picks a voice, and exports the vocal track only (from 0:00, mono WAV).
+When he uploads that file, run `python3 studio/studio.py make <path to the file>`; check its timing against the band.
+
 ## Quality rules he set (do not regress)
 
 - Tuning must sound natural, never "auto-tune": note-centre correction on her REAL recording with Rubber Band
