@@ -29,7 +29,7 @@ notes = []; beat = 0
 for b in BARS:
     x = beat
     for m, d in b['mel']:
-        if m > 0 and 1 <= b['v'] <= 12: notes.append([x, d, m + SHIFT])
+        if m > 0 and b['v'] <= 12: notes.append([x, d, m + SHIFT])
         x += d
     beat += b['beats']
 TOTAL = beat
@@ -104,3 +104,21 @@ for s, d, p, sy, kind in score:
     tr.append(mido.Message('note_on', note=p, velocity=90, time=0)); tr.append(mido.Message('note_off', note=p, velocity=0, time=int(round(d * 480)) - 2)); last = on + int(round(d * 480)) - 2
 mid.save(os.path.join(OUT, 'Twelve Days of Healing - vocal melody with lyrics.mid'))
 print(f'{len(score)} sung notes, {sum(1 for n in score if n[3] == "-")} held, total {TOTAL} beats ({TOTAL * BEAT:.1f} s)')
+# ---- notes-only MIDI + pasteable lyric text (Synthesizer V "Insert Lyrics": one token per note, in order)
+mid2 = mido.MidiFile(ticks_per_beat=480); tr2 = mido.MidiTrack(); mid2.tracks.append(tr2)
+tr2.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(100))); last = 0; toks = []
+for t_ in tr:
+    if t_.type == 'lyrics': toks.append(t_.text)
+for s, d, p, sy, kind in score:
+    on = int(round(s * 480)); tr2.append(mido.Message('note_on', note=p, velocity=90, time=on - last))
+    off = on + int(round(d * 480)) - 2; tr2.append(mido.Message('note_off', note=p, velocity=0, time=off - on)); last = off
+mid2.save(os.path.join(OUT, 'Twelve Days of Healing - melody (notes only).mid'))
+# one line of text per sung line, tokens separated by spaces
+lines_txt = []; k = 0
+for mk, ln in lines:
+    n_ = sum(1 for n in score if n[0] >= mk['t'] / BEAT - 0.03 and (mk is M[-1] or n[0] < M[M.index(mk) + 1]['t'] / BEAT - 0.03))
+    lines_txt.append(' '.join(toks[k:k + n_])); k += n_
+assert k == len(toks) == len(score), (k, len(toks), len(score))
+open(os.path.join(OUT, 'Twelve Days of Healing - lyrics to paste.txt'), 'w').write('\n'.join(lines_txt) + '\n')
+print('paste text:', len(toks), 'tokens for', len(score), 'notes')
+
