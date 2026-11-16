@@ -121,4 +121,27 @@ for mk, ln in lines:
 assert k == len(toks) == len(score), (k, len(toks), len(score))
 open(os.path.join(OUT, 'Twelve Days of Healing - lyrics to paste.txt'), 'w').write('\n'.join(lines_txt) + '\n')
 print('paste text:', len(toks), 'tokens for', len(score), 'notes')
+# ---- Synthesizer V project (.svp): opens directly with every note's lyric already set
+import uuid
+BL = 705600000                                   # SynthV "blicks" per quarter note
+gid = str(uuid.uuid4())
+sv_notes = []
+for (s, d, p, sy, kind), tok in zip(score, toks):
+    sv_notes.append({"onset": int(round(s * BL)), "duration": int(round(d * BL)) - 1000, "lyrics": tok, "phonemes": "",
+                     "pitch": p, "detune": 0, "attributes": {}})
+empty = {"mode": "cubic", "points": []}
+params = {k: dict(empty) for k in ("pitchDelta", "vibratoEnv", "loudness", "tension", "breathiness", "voicing", "gender", "toneShift")}
+proj = {"version": 153,
+        "time": {"meter": [{"index": 0, "numerator": 4, "denominator": 4}], "tempo": [{"position": 0, "bpm": 100.0}]},
+        "library": [],
+        "tracks": [{"name": "Vocal", "dispColor": "ff7db235", "dispOrder": 0, "renderEnabled": False,
+                    "mixer": {"gainDecibel": 0.0, "pan": 0.0, "mute": False, "solo": False, "display": True},
+                    "mainGroup": {"name": "main", "uuid": gid, "parameters": params, "notes": sv_notes},
+                    "mainRef": {"groupID": gid, "blickOffset": 0, "pitchOffset": 0, "isInstrumental": False,
+                                "database": {"name": "", "language": "english", "phoneset": ""}, "dictionary": "", "voice": {}},
+                    "groups": []}],
+        "renderConfig": {"destination": "", "filename": "Twelve Days of Healing - vocal", "numChannels": 1, "aspirationFormat": "noAspiration",
+                         "bitDepth": 16, "sampleRate": 44100, "exportMixDown": True}}
+json.dump(proj, open(os.path.join(OUT, 'Twelve Days of Healing - vocal (Synthesizer V project).svp'), 'w'))
+print('svp:', len(sv_notes), 'notes, all with lyrics:', all(n['lyrics'] for n in sv_notes))
 
