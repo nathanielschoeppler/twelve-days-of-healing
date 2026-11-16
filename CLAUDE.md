@@ -12,6 +12,7 @@ bash studio/setup.sh                       # once per machine (apt + pip)
 python3 studio/studio.py list              # see what is in the online storage
 python3 studio/studio.py make              # newest take
 python3 studio/studio.py make <file name>  # a specific take
+python3 studio/studio.py remix <file name> # re-mix an already processed take (keeps its tuned vocals)
 ```
 
 Then send him `studio/out/<take>/<take> - studio mix.mp3` (SendUserFile) with a short summary built from
@@ -29,7 +30,7 @@ say so; never invent or copy material without telling him.
 - Vocal must never cut out or fade: no aggressive gates or noise reduction (only light `afftdn`).
 - The band is the sampled-instrument arrangement in `studio/arrange.py`, on the app's exact beat grid
   (100 BPM, beat 0 = 0.0 s), building from day 1 to day 12. Keep it locked to her vocal.
-- Mix: vocal about 3 dB over the band, harmonies a third above on "Fiiive" lines and the last line of
+- Mix: vocal about 1 dB over the band (he asked for the instruments a bit louder; `VOCAL_OVER_BAND`), harmonies a third above on "Fiiive" lines and the last line of
   days 9-12, master at -14 LUFS with no clipping.
 - Check before sending: pitch before/after, vibrato kept, dropouts 0, timing ~0 ms, words. Never send audio you
   have not verified (an earlier mistake: sending files with no vocals in them).

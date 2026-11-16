@@ -13,7 +13,7 @@ Steps (all automatic):
   5. full-band backing (piano, acoustic guitar, bass, strings, acoustic drums, shaker, sleigh bells,
      glockenspiel) rendered with sampled instruments, building from day 1 to day 12 (cached per key)
   6. mix: vocal chain (EQ, de-ess, two-stage compression, plate reverb, eighth-note echo), harmonies wide,
-     vocal ~3 dB over the band, mastered to -14 LUFS with no clipping
+     vocal ~1 dB over the band (VOCAL_OVER_BAND, dB), mastered to -14 LUFS with no clipping
   7. QA report: pitch accuracy, vibrato kept, tone cleanliness, timing, dropouts, word check
 Outputs land in studio/out/<take>/ ; the finished song is "<take> - studio mix.mp3".
 """
@@ -209,10 +209,10 @@ def mix(out_dir, bk, title):
         x, sr = sf.read(p, dtype='float32'); x = x.mean(1); s = x[int(a * sr):int(b * sr)]; return 20 * np.log10(np.sqrt(np.mean(s ** 2)) + 1e-12)
     tv, tb, pre = (os.path.join(out_dir, f) for f in ('_v.wav', '_b.wav', '_pre.wav'))
     render(tv, 0.0, 1, 0); render(tb, 1.0, 0, 0)
-    # balance on the days she actually sang (vocal ~3 dB over the band)
+    # balance on the days she actually sang: vocal this many dB over the band (Nathaniel asked for the band a bit louder: 3 -> 1)
     x, sr = sf.read(tv, dtype='float32'); x = x.mean(1); h = int(sr * 0.5); e = np.sqrt((x[:len(x) // h * h].reshape(-1, h) ** 2).mean(1))
     live = np.where(e > np.max(e) * 0.05)[0]; a, b = (live[0] * 0.5, live[-1] * 0.5 + 0.5) if len(live) else (6, 272)
-    gb = 10 ** ((rms(tv, a, b) - 3.0 - rms(tb, a, b)) / 20)
+    gb = 10 ** ((rms(tv, a, b) - float(os.environ.get('VOCAL_OVER_BAND', '1.0')) - rms(tb, a, b)) / 20)
     render(pre, gb)
     m = subprocess.run(['ffmpeg', '-hide_banner', '-i', pre, '-af', 'ebur128', '-f', 'null', '-'], capture_output=True, text=True).stderr
     g = -14.0 - float(re.findall(r'I:\s+(-?[\d.]+) LUFS', m)[-1])
@@ -276,6 +276,12 @@ def make(name=''):
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == 'make': make(sys.argv[2] if len(sys.argv) > 2 else '')
+    elif len(sys.argv) >= 3 and sys.argv[1] == 'remix':            # re-mix a take already processed (keeps its tuned vocals)
+        title = sys.argv[2].replace('__raw.wav', '').replace('.wav', ''); out = os.path.join(HERE, 'out', title)
+        raw = os.path.join(HERE, 'out', '_dl', title + '__raw.wav'); x, sr = sf.read(raw, dtype='float64'); x = x.mean(1) if x.ndim > 1 else x
+        _, notes = song(); shift = find_key(pitch_track(x, sr), notes)
+        wav, mp3 = mix(out, backing(shift), title); rep = qa(raw, os.path.join(out, 'vocal_lead.wav'), wav, shift, words=False)
+        open(os.path.join(out, 'QA.txt'), 'w').write('\n'.join(rep) + '\n'); print('\n'.join(rep)); print('DONE:', mp3)
     elif len(sys.argv) >= 2 and sys.argv[1] == 'list':
         for o in sorted(cloud_list(), key=lambda o: o['created_at']): print(o['created_at'][:16], o['name'])
     else: print(__doc__)

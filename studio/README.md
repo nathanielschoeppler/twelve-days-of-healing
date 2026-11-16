@@ -7,6 +7,7 @@ mixed and mastered.
 bash studio/setup.sh               # once: ffmpeg, fluidsynth + sampled instruments, Rubber Band, Python libs
 python3 studio/studio.py make      # newest take in the online storage
 python3 studio/studio.py make NAME # a specific take (see: python3 studio/studio.py list)
+python3 studio/studio.py remix NAME # re-mix a processed take, keeping its tuned vocals
 ```
 
 Output: `studio/out/<take>/`
@@ -23,4 +24,4 @@ How it works:
 5. The band (`arrange.py`): piano, acoustic guitar, bass, strings, acoustic drum kit, shaker, sleigh bells and
    glockenspiel, rendered with sampled instruments and building from day 1 to day 12. It is cached per key in
    `studio/cache/`.
-6. The mix: vocal EQ, de-essing, compression, plate reverb and eighth-note echo; vocal about 3 dB over the band; mastered.
+6. The mix: vocal EQ, de-essing, compression, plate reverb and eighth-note echo; vocal about 1 dB over the band; mastered.
