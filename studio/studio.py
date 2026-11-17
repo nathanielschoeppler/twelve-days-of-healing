@@ -186,6 +186,9 @@ def backing(shift):
     return path
 
 # ---------------------------------------------------------------- 6. mix + master
+# He heard her voice "overlapping" with the harmony copy and the eighth-note echo: both are off unless asked for.
+HARMONY = float(os.environ.get('HARMONY', '0'))     # 1 = harmony a third above on "Fiiive" lines + last lines of days 9-12
+ECHO = float(os.environ.get('ECHO', '0'))           # 0.3 = the old eighth-note echo level
 def vocal_graph(gb, gv=1.0, gh=1.0):
     return (f"[3:a]asplit=2[ir1][ir2];"
             f"[0:a]aresample={SR}:resampler=soxr,afftdn=nr=10:nf=-52:tn=1,highpass=f=100,equalizer=f=280:t=q:w=1.2:g=-3,equalizer=f=480:t=q:w=1:g=-2.5,"
@@ -193,9 +196,9 @@ def vocal_graph(gb, gv=1.0, gh=1.0):
             f"acompressor=threshold=0.1:ratio=2:attack=25:release=250:makeup=1.6,volume={1.65 * gv},asplit=3[dry][rvs][dls];"
             f"[rvs]highpass=f=250,lowpass=f=9000,aformat=channel_layouts=stereo[rvin];[rvin][ir1]afir=dry=0:wet=1,volume=0.36[rv];"
             f"[dls]highpass=f=400,lowpass=f=5000,aecho=0.8:0.9:300|600:0.28|0.12,volume=0.5,aformat=channel_layouts=stereo[dl];"
-            f"[dry]aformat=channel_layouts=stereo[dry2];[dry2][rv][dl]amix=inputs=3:weights='1 1 0.3':normalize=0[voc];"
+            f"[dry]aformat=channel_layouts=stereo[dry2];[dry2][rv][dl]amix=inputs=3:weights='1 1 {ECHO}':normalize=0[voc];"
             f"[1:a]aresample={SR}:resampler=soxr,afftdn=nr=10:nf=-52:tn=1,highpass=f=220,equalizer=f=3000:t=q:w=1:g=1.5,highshelf=f=9000:g=2,deesser=i=0.5,"
-            f"acompressor=threshold=0.15:ratio=4:attack=5:release=100:makeup=1.5,volume={0.42 * gh},asplit=3[ha][hb][hr];"
+            f"acompressor=threshold=0.15:ratio=4:attack=5:release=100:makeup=1.5,volume={0.42 * gh * HARMONY},asplit=3[ha][hb][hr];"
             f"[ha]adelay=9[hal];[hb]adelay=21,equalizer=f=1800:t=q:w=2:g=-1.5[hbr];[hal][hbr]join=inputs=2:channel_layout=stereo[hst];"
             f"[hr]aformat=channel_layouts=stereo,highpass=f=300[hrin];[hrin][ir2]afir=dry=0:wet=1,volume=0.5[hrv];[hst][hrv]amix=inputs=2:normalize=0[har];"
             f"[2:a]aresample={SR},lowshelf=f=100:g=4,equalizer=f=500:t=q:w=1:g=-2,equalizer=f=3000:t=q:w=1.2:g=-2.5,equalizer=f=1200:t=q:w=1:g=-1,volume={gb}[bk];"

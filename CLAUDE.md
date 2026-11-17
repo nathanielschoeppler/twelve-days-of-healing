@@ -37,8 +37,9 @@ When he uploads that file, run `python3 studio/studio.py make <path to the file>
 - Vocal must never cut out or fade: no aggressive gates or noise reduction (only light `afftdn`).
 - The band is the sampled-instrument arrangement in `studio/arrange.py`, on the app's exact beat grid
   (100 BPM, beat 0 = 0.0 s), building from day 1 to day 12. Keep it locked to her vocal.
-- Mix: vocal about 1 dB over the band (he asked for the instruments a bit louder; `VOCAL_OVER_BAND`), harmonies a third above on "Fiiive" lines and the last line of
-  days 9-12, master at -14 LUFS with no clipping.
+- Mix: vocal about 1 dB over the band (he asked for the instruments a bit louder; `VOCAL_OVER_BAND`), master at -14 LUFS
+  with no clipping. ONE lead voice only: he heard the harmony copy and the eighth-note echo as her voice overlapping,
+  so both are off by default (`HARMONY=1` / `ECHO=0.3` bring them back only if he asks).
 - Check before sending: pitch before/after, vibrato kept, dropouts 0, timing ~0 ms, words. Never send audio you
   have not verified (an earlier mistake: sending files with no vocals in them).
 - Be honest about limits: the checks are measurements, not listening, so ask him to listen at specific times.
