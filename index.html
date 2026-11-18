@@ -273,7 +273,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     </div>
     <div class="row"><button class="btn" id="sndTest" type="button">🔊 Test sound</button><span class="note" id="sndMsg">Can’t hear the music? Tap this.</span></div>
     <div class="row"><button class="btn del" id="resetPhone" type="button">Reset this phone</button><span class="note">Deletes every take, line and verse saved on this phone and starts the app fresh. Recordings already sent online stay in All recordings.</span></div>
-    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 30</span></div>
+    <div class="row" style="justify-content:space-between"><button class="btn" id="tourAgain" type="button">Take the tour again</button><span class="note" style="opacity:.6">App version 31</span></div>
   </section>
 
   <!-- LINE BY LINE -->
@@ -394,6 +394,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <span class="note" id="micMsg">Press the button and sing a note. The bar should jump when you sing.</span>
     </div>
     <label class="check"><input type="checkbox" id="guide" checked> Play the tune in my headphones so I can follow it</label>
+    <label class="check"><input type="checkbox" class="clickToggle" id="clickRec" checked> Tick-tock beat in my headphones (helps keep the counting even)</label>
     <div class="row">
       <button class="big" id="startBtn" type="button">● Start recording</button>
       <button class="btn" id="backLesson" type="button">← Back to the lesson</button>
@@ -458,6 +459,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <div class="row" style="justify-content:center;gap:10px"><button class="big" id="prcPlay" type="button" style="font-size:18px;padding:12px 26px">▶ Play</button><button class="btn" id="prcRestart" type="button">⟲ From the top</button></div>
       <div class="row" style="justify-content:center;gap:6px;flex-wrap:wrap" id="prcDays"></div>
       <label class="row" style="justify-content:center;gap:8px"><input type="checkbox" id="prcGuide"> <span>Play the melody guide (the tune to sing)</span></label>
+      <label class="row" style="justify-content:center;gap:8px"><input type="checkbox" class="clickToggle" id="prcClick" checked> <span>Tick-tock beat (keeps the counting even)</span></label>
       <div class="row" style="justify-content:center;gap:6px"><button class="btn" data-off="-0.1" type="button" aria-label="Show words earlier">◀ Words earlier</button><span class="note offLbl">Words on time</span><button class="btn" data-off="0.1" type="button" aria-label="Show words later">Words later ▶</button></div>
     </div>
   </section>
@@ -920,14 +922,30 @@ function show(id) {
 }
 
 /* ---------- music prep ---------- */
+// tick-tock: a soft click on every beat (a brighter one on each bar's first beat) mixed into the sing-along music,
+// so the beat and counting stay even. Never in the finished song (that uses its own clean render).
+K.click = (() => { try { return localStorage.getItem('tdh-click') !== '0'; } catch (e) { return true; } })();
+function addClick(buf, bars) {
+  const sr = buf.sampleRate, spb = 60 / K.bpm, chs = [...Array(buf.numberOfChannels).keys()].map(c => buf.getChannelData(c));
+  let beat = 0;
+  bars.forEach(b => {
+    for (let i = 0; i < b.beats; i++) {
+      const t0 = Math.round((beat + i) * spb * sr), down = i === 0, f = down ? 2000 : 1300, amp = down ? 0.26 : 0.17, n = Math.round(0.035 * sr);
+      for (let j = 0; j < n && t0 + j < chs[0].length; j++) { const v = amp * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / (0.008 * sr)); chs.forEach(c => c[t0 + j] += v); }
+    }
+    beat += b.beats;
+  });
+}
+function setClick(on) { K.click = on; try { localStorage.setItem('tdh-click', on ? '1' : '0'); } catch (e) {} document.querySelectorAll('.clickToggle').forEach(x => x.checked = on); }
 function prepareGuided() {
-  const key = K.shift + '|' + K.guide;
+  const key = K.shift + '|' + K.guide + '|' + K.click;
   if (K.prep && K.prepKey === key) return K.prep;
   K.prepKey = key; K.guided = null;
   $('prepMsg').textContent = 'Getting the music ready…';
   K.prep = (async () => {
     await yieldUI();
     const r = await renderTwelveDays(K.shift, K.bpm, K.guide, p => { if (K.prepKey === key) $('prepMsg').textContent = `Getting the music ready… ${Math.round(p * 100)}%`; });
+    if (K.click) addClick(r.buf, tdSong());
     if (K.prepKey === key) { K.guided = r.buf; K.marks = r.marks; $('prepMsg').textContent = 'Music ready.'; }
     return r;
   })();
@@ -1010,10 +1028,10 @@ function spliceToFull(recA, recFr) {
 let FULLNOTES = null; const fullNotes = () => FULLNOTES || (FULLNOTES = notesOf(tdSong()));
 async function prepareRec() {
   if (!K.parts) { const r = await prepareGuided(); return { buf: r.buf, marks: r.marks, bars: tdSong(), notes: fullNotes(), parts: false }; }
-  const key = K.shift + '|' + K.guide;
+  const key = K.shift + '|' + K.guide + '|' + K.click;
   if (!K.partsPrep || K.partsKey !== key) {
     K.partsKey = key;
-    K.partsPrep = (async () => { await yieldUI(); const bars = partsSong(); const r = await renderTwelveDays(K.shift, K.bpm, K.guide, p => { $('prepMsg').textContent = `Getting the parts track ready… ${Math.round(p * 100)}%`; if ($('startBtn').disabled) $('startBtn').textContent = `Getting ready… ${Math.round(p * 100)}%`; }, bars); $('prepMsg').textContent = 'Music ready.'; return { buf: r.buf, marks: r.marks, bars, notes: notesOf(bars), parts: true }; })();
+    K.partsPrep = (async () => { await yieldUI(); const bars = partsSong(); const r = await renderTwelveDays(K.shift, K.bpm, K.guide, p => { $('prepMsg').textContent = `Getting the parts track ready… ${Math.round(p * 100)}%`; if ($('startBtn').disabled) $('startBtn').textContent = `Getting ready… ${Math.round(p * 100)}%`; }, bars); if (K.click) addClick(r.buf, bars); $('prepMsg').textContent = 'Music ready.'; return { buf: r.buf, marks: r.marks, bars, notes: notesOf(bars), parts: true }; })();
   }
   return K.partsPrep;
 }
@@ -1021,6 +1039,7 @@ document.querySelectorAll('[data-shift]').forEach(b => b.addEventListener('click
   K.shift = +b.dataset.shift; document.querySelectorAll('[data-shift]').forEach(x => x.setAttribute('aria-pressed', x === b)); prepareGuided();
 }));
 $('guide').addEventListener('change', e => { K.guide = e.target.checked; prepareGuided(); });
+document.querySelectorAll('.clickToggle').forEach(x => { x.checked = K.click; x.addEventListener('change', e => { const was = typeof PR !== 'undefined' && PR.playing; if (was) prStop(); setClick(e.target.checked); prepareGuided(); if (was) prPlay(); }); });
 
 /* ---------- karaoke timing ---------- */
 // Each lyric line knows the exact onsets of its melody notes, so the highlight moves note by note.
