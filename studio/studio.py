@@ -212,7 +212,7 @@ def vocal_graph(gb, gv=1.0, gh=1.0):
             f"acompressor=threshold=0.15:ratio=4:attack=5:release=100:makeup=1.5,volume={0.42 * gh * HARMONY},asplit=3[ha][hb][hr];"
             f"[ha]adelay=9[hal];[hb]adelay=21,equalizer=f=1800:t=q:w=2:g=-1.5[hbr];[hal][hbr]join=inputs=2:channel_layout=stereo[hst];"
             f"[hr]aformat=channel_layouts=stereo,highpass=f=300[hrin];[hrin][ir2]afir=dry=0:wet=1,volume=0.5[hrv];[hst][hrv]amix=inputs=2:normalize=0[har];"
-            f"[2:a]aresample={SR},lowshelf=f=100:g=4,equalizer=f=500:t=q:w=1:g=-2,equalizer=f=3000:t=q:w=1.2:g=-2.5,equalizer=f=1200:t=q:w=1:g=-1,volume={gb}[bk];"
+            f"[2:a]aresample={SR},lowshelf=f=100:g=4,equalizer=f=500:t=q:w=1:g=-2,equalizer=f=3500:t=q:w=0.8:g=-5,equalizer=f=1200:t=q:w=1:g=-1.5,volume={gb}[bk];"
             f"[voc][har][bk]amix=inputs=3:normalize=0,acompressor=threshold=0.35:ratio=1.8:attack=30:release=300:makeup=1.0,highshelf=f=12000:g=2.5,afade=t=in:d=0.3[o]")
 def mix(out_dir, bk, title):
     lead, har, ir = os.path.join(out_dir, 'vocal_lead.wav'), os.path.join(out_dir, 'vocal_harmony.wav'), os.path.join(HERE, 'cache', 'plate.wav')
