@@ -35,12 +35,13 @@ When he uploads that file, run `python3 studio/studio.py make <path to the file>
   (`-3 -F --pitchmap`), her vibrato/slides kept. Never resynthesize the voice (WORLD/vocoders made it sound
   robotic and grainy). No chorus doubling, no exciter on the lead.
 - Vocal must never cut out or fade: no aggressive gates or noise reduction (only light `afftdn`).
-- Band: drums up front, bells; NO string pad (he called it "organ weird shit"), so `BAND_DROP=strings` by default
-  (`BAND_DROP=strings,piano,guitar,bass` = drums and bells only). The band is the sampled-instrument arrangement in `studio/arrange.py`, on the app's exact beat grid
-  (100 BPM, beat 0 = 0.0 s), building from day 1 to day 12. Keep it locked to her vocal.
-- Mix: vocal about 1 dB over the band (he asked for the instruments a bit louder; `VOCAL_OVER_BAND`), master at -14 LUFS
-  with no clipping. ONE lead voice only: he heard the harmony copy and the eighth-note echo as her voice overlapping,
-  so both are off by default (`HARMONY=1` / `ECHO=0.3` bring them back only if he asks).
+- Band: DRUMS AND BELLS ONLY (he chose it): kit, shaker, tambourine, claps, sleigh bells, glockenspiel; groove from the
+  intro, fuller start (`BAND_DROP=strings,piano,guitar,bass` default). No string pad ("organ weird shit"). The band is
+  `studio/arrange.py` on the app's exact beat grid (100 BPM, beat 0 = 0.0 s). Keep it locked to her vocal.
+- Mix: vocal 4 dB over the band by average level (drums hit harder than their average), and the bright part of the band
+  (>1.5 kHz) ducks while she sings (`DUCK=3`) so her consonants read; crash on new days kept soft. Master -14 LUFS, no
+  clipping. ONE lead voice only: harmony and eighth-note echo are off (`HARMONY=1` / `ECHO=0.3` only if he asks).
+  Word check: compare against her voice alone; a 6 s clip of each day's opening line is a fair test.
 - Check before sending: pitch before/after, vibrato kept, dropouts 0, timing ~0 ms, words. Never send audio you
   have not verified (an earlier mistake: sending files with no vocals in them).
 - Be honest about limits: the checks are measurements, not listening, so ask him to listen at specific times.

@@ -149,7 +149,7 @@ def plate_ir(path):
     sf.write(path, ir.astype(np.float32), SR)
 # Instruments left out of the band. He said "no organ weird shit": the sustained string pad sounded organ-like,
 # so it is out by default. BAND_DROP=strings,piano,guitar,bass -> drums and bells only.
-BAND_DROP = [x for x in os.environ.get('BAND_DROP', 'strings').split(',') if x]
+BAND_DROP = [x for x in os.environ.get('BAND_DROP', 'strings,piano,guitar,bass').split(',') if x]   # he chose drums + bells only
 def backing(shift, drop=None):
     drop = sorted(BAND_DROP if drop is None else drop)
     path = os.path.join(HERE, 'cache', f'backing_{shift:+d}' + (('_no-' + '-'.join(drop)) if drop else '') + '.wav')
@@ -168,10 +168,10 @@ def mix_band(wd, path, drop):
     for b in B:                                                  # each day's section = its opening bar
         if b.get('line') == 'open' and b['v'] not in st: st[b['v']] = beat * BEAT
         beat += b['beats']
-    GAIN = {1: -7, 2: -6, 3: -4.5, 4: -3.5, 5: -2.5, 6: -2, 7: -1.5, 8: -1, 9: -0.5, 10: 0, 11: 0, 12: 0}
+    GAIN = {1: -3, 2: -2.5, 3: -2, 4: -1.5, 5: -1.2, 6: -1, 7: -0.8, 8: -0.6, 9: -0.3, 10: 0, 11: 0, 12: 0}   # fuller start (he asked)
     expr = '0'
     for d in range(12, 0, -1): expr = f"if(gte(t,{st[d] - 0.6:.2f}),{10 ** (GAIN[d] / 20):.3f},{expr})"
-    expr = expr.replace(',0)', ',0.45)', 1)
+    expr = expr.replace(',0)', ',0.7)', 1)
     S = [('piano', -1.5, 'highpass=f=70,equalizer=f=180:t=q:w=1:g=-4,equalizer=f=350:t=q:w=1:g=-3,equalizer=f=3000:t=q:w=1:g=2.5,highshelf=f=8000:g=2', 0.22, 0.22),
          ('guitar', 1.0, 'highpass=f=110,equalizer=f=200:t=q:w=1:g=-5,equalizer=f=4000:t=q:w=1:g=3.5,highshelf=f=9000:g=2.5,acompressor=threshold=0.2:ratio=3:attack=5:release=80:makeup=1.3', -0.4, 0.15),
          ('bass', -1.0, 'highpass=f=35,lowpass=f=3500,equalizer=f=800:t=q:w=1:g=1.5,acompressor=threshold=0.15:ratio=4:attack=10:release=120:makeup=1.6', 0.0, 0.0),
@@ -199,7 +199,8 @@ def mix_band(wd, path, drop):
 # ---------------------------------------------------------------- 6. mix + master
 # He heard her voice "overlapping" with the harmony copy and the eighth-note echo: both are off unless asked for.
 HARMONY = float(os.environ.get('HARMONY', '0'))     # 1 = harmony a third above on "Fiiive" lines + last lines of days 9-12
-ECHO = float(os.environ.get('ECHO', '0'))           # 0.3 = the old eighth-note echo level
+ECHO = float(os.environ.get('ECHO', '0'))
+DUCK = float(os.environ.get('DUCK', '3'))            # bright part of the band (>1.5 kHz: shaker, tambourine, bells, hats) dips while she sings; 1 = off           # 0.3 = the old eighth-note echo level
 def vocal_graph(gb, gv=1.0, gh=1.0):
     return (f"[3:a]asplit=2[ir1][ir2];"
             f"[0:a]aresample={SR}:resampler=soxr,afftdn=nr=10:nf=-52:tn=1,highpass=f=100,equalizer=f=280:t=q:w=1.2:g=-3,equalizer=f=480:t=q:w=1:g=-2.5,"
@@ -213,7 +214,9 @@ def vocal_graph(gb, gv=1.0, gh=1.0):
             f"[ha]adelay=9[hal];[hb]adelay=21,equalizer=f=1800:t=q:w=2:g=-1.5[hbr];[hal][hbr]join=inputs=2:channel_layout=stereo[hst];"
             f"[hr]aformat=channel_layouts=stereo,highpass=f=300[hrin];[hrin][ir2]afir=dry=0:wet=1,volume=0.5[hrv];[hst][hrv]amix=inputs=2:normalize=0[har];"
             f"[2:a]aresample={SR},lowshelf=f=100:g=4,equalizer=f=500:t=q:w=1:g=-2,equalizer=f=3500:t=q:w=0.8:g=-5,equalizer=f=1200:t=q:w=1:g=-1.5,volume={gb}[bk];"
-            f"[voc][har][bk]amix=inputs=3:normalize=0,acompressor=threshold=0.35:ratio=1.8:attack=30:release=300:makeup=1.0,highshelf=f=12000:g=2.5,afade=t=in:d=0.3[o]")
+            f"[voc]asplit=2[voc1][vkey];[bk]asplit=2[bkl][bkh];[bkl]lowpass=f=1500:p=2[bklo];[bkh]highpass=f=1500:p=2[bkhi];"
+            f"[bkhi][vkey]sidechaincompress=threshold=0.03:ratio={DUCK}:attack=10:release=220:knee=4:detection=rms[bkhd];[bklo][bkhd]amix=inputs=2:normalize=0[bkd];"
+            f"[voc1][har][bkd]amix=inputs=3:normalize=0,acompressor=threshold=0.35:ratio=1.8:attack=30:release=300:makeup=1.0,highshelf=f=12000:g=2.5,afade=t=in:d=0.3[o]")
 def mix(out_dir, bk, title):
     lead, har, ir = os.path.join(out_dir, 'vocal_lead.wav'), os.path.join(out_dir, 'vocal_harmony.wav'), os.path.join(HERE, 'cache', 'plate.wav')
     plate_ir(ir)
@@ -226,12 +229,12 @@ def mix(out_dir, bk, title):
     # balance on the days she actually sang: vocal this many dB over the band (Nathaniel asked for the band a bit louder: 3 -> 1)
     x, sr = sf.read(tv, dtype='float32'); x = x.mean(1); h = int(sr * 0.5); e = np.sqrt((x[:len(x) // h * h].reshape(-1, h) ** 2).mean(1))
     live = np.where(e > np.max(e) * 0.05)[0]; a, b = (live[0] * 0.5, live[-1] * 0.5 + 0.5) if len(live) else (6, 272)
-    gb = 10 ** ((rms(tv, a, b) - float(os.environ.get('VOCAL_OVER_BAND', '1.0')) - rms(tb, a, b)) / 20)
+    gb = 10 ** ((rms(tv, a, b) - float(os.environ.get('VOCAL_OVER_BAND', '4.0')) - rms(tb, a, b)) / 20)
     render(pre, gb)
     m = subprocess.run(['ffmpeg', '-hide_banner', '-i', pre, '-af', 'ebur128', '-f', 'null', '-'], capture_output=True, text=True).stderr
     g = -14.0 - float(re.findall(r'I:\s+(-?[\d.]+) LUFS', m)[-1])
     wav = os.path.join(out_dir, f'{title} - studio mix.wav'); mp3 = wav[:-4] + '.mp3'
-    sh('ffmpeg', '-loglevel', 'error', '-y', '-i', pre, '-af', f'volume={g:.2f}dB,alimiter=limit=0.89:attack=1:release=60:level=false', '-c:a', 'pcm_s24le', wav)
+    sh('ffmpeg', '-loglevel', 'error', '-y', '-i', pre, '-af', f'volume={g:.2f}dB,alimiter=limit=0.84:attack=1:release=60:level=false', '-c:a', 'pcm_s24le', wav)
     sh('ffmpeg', '-loglevel', 'error', '-y', '-i', wav, '-b:a', '320k', '-ar', str(SR), mp3)
     for f in (tv, tb, pre): os.remove(f)
     return wav, mp3

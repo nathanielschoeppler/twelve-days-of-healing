@@ -88,40 +88,40 @@ for t, n, name, b in starts:
         for p in voic: strings.note(t, n + 0.05, p, 46 + 34 * L, hum=0)
         if v >= 9 or outro: strings.note(t, n + 0.05, voic[-1] + 12, 40 + 30 * L, hum=0)
         strings.cc(t, 11, 70 + 40 * L)
-    # ---- drums and percussion (builds from day 1; he asked for more percussion)
-    if v >= 1 and not outro:
+    # ---- drums and percussion. He picked "drums and bells only" and wanted more at the start: the groove is there
+    # from the intro, and the extra layers come in earlier than before.
+    if not outro:
         x = t
-        while x < t + n - 1e-6:                                    # shaker eighths (GM 70), soft on days 1-2
+        while x < t + n - 1e-6:                                    # shaker eighths (GM 70) from the intro
             on = abs(x - round(x)) < 1e-6
-            shaker.note(x, 0.2, 70, ((46 if on else 34) + 20 * L) * (0.75 if v <= 2 else 1), hum=0.006); x += 0.5
-    if v >= 3 and not outro:
+            shaker.note(x, 0.2, 70, (48 if on else 36) + 20 * L, hum=0.006); x += 0.5
         for i in range(int(n)):
             x = t + i; bb = round(x - b['start'])
-            if v < 5:                                              # days 3-4: soft kick on the 1, cross-stick joins on day 4
-                if bb == 0: drums.note(x, 0.3, 36, 64 + 30 * L)
-                if v == 4 and bb % 2 == 1: drums.note(x, 0.3, 37, 56 + 30 * L)
+            if v == 0:                                             # intro: kick on the 1 to set the groove
+                if bb == 0: drums.note(x, 0.3, 36, 70)
                 continue
-            if bb % 2 == 0: drums.note(x, 0.3, 36, 72 + 30 * L)                             # kick on 1 and 3
+            if bb % 2 == 0: drums.note(x, 0.3, 36, 70 + 30 * L)                             # kick on 1 and 3 from day 1
             else:
-                drums.note(x, 0.3, 37 if v < 9 else 38, (64 if v < 9 else 70) + 30 * L)     # cross-stick, then snare
+                if v >= 2: drums.note(x, 0.3, 37 if v < 9 else 38, (62 if v < 9 else 70) + 30 * L)   # cross-stick, then snare
                 if v >= 9: drums.note(x, 0.2, 39, 58 + 22 * L)                             # hand claps with the snare
-                drums.note(x, 0.2, 54, 54 + 22 * L)                                         # tambourine on 2 and 4
+                if v >= 3: drums.note(x, 0.2, 54, 54 + 22 * L)                             # tambourine on 2 and 4
             if v >= 7 and bb == 1 and b['beats'] == 4: drums.note(x + 0.5, 0.25, 36, 56 + 24 * L)   # kick push
-            drums.note(x, 0.15, 42, 38 + 18 * L)                                            # hi-hat eighths
-            last_and = v >= 9 and bb == b['beats'] - 1
-            drums.note(x + 0.5, 0.25 if last_and else 0.15, 46 if last_and else 42, 48 + 20 * L)  # open hat into the next bar
+            if v >= 4:
+                drums.note(x, 0.15, 42, 38 + 18 * L)                                        # hi-hat eighths
+                last_and = v >= 9 and bb == b['beats'] - 1
+                drums.note(x + 0.5, 0.25 if last_and else 0.15, 46 if last_and else 42, 48 + 20 * L)  # open hat into the next bar
             if v >= 9: drums.note(x + 0.5, 0.2, 54, 40 + 18 * L)                            # tambourine eighths
-    # sleigh bells (jingle bell 83) from day 3
-    if v >= 3 and not outro:
+    # sleigh bells (jingle bell 83) from the intro
+    if not outro:
         x = t
-        while x < t + n - 1e-6: bells.note(x, 0.25, 83, (52 if abs(x - round(x)) < 1e-6 else 38) + 25 * L, hum=0.005); x += 0.5
+        while x < t + n - 1e-6: bells.note(x, 0.25, 83, (54 if abs(x - round(x)) < 1e-6 else 40) + 25 * L, hum=0.005); x += 0.5
 
 for bi, b in enumerate(BARS):
     v = b['v']; s = b['start']
     nb = BARS[bi + 1] if bi + 1 < len(BARS) else None
-    if 5 <= v <= 11 and nb and nb.get('line') == 'open' and nb['v'] == v + 1:                # tom fill into each new day
+    if 2 <= v <= 11 and nb and nb.get('line') == 'open' and nb['v'] == v + 1:                # tom fill into each new day
         for k, (tom, vel) in enumerate([(50, 70), (48, 74), (45, 78), (43, 84)]): drums.note(s + 2 + 0.25 * k, 0.25, tom, vel + 2 * (v - 5))
-    if v >= 9 and b.get('line') == 'open': drums.note(s, 2, 49, 84)                         # crash on each new day
+    if v >= 9 and b.get('line') == 'open': drums.note(s, 0.5, 49, 56)                       # light crash on each new day (kept soft: it sits on the opening words)
     if b.get('chime'):                                                                       # "Fiiive": bell chime + swell + crash
         for k, (m, d) in enumerate([(84, 2), (86, 0.5), (83, 1.5)]): glock.note(s + [0, 2, 2.5][k], d, m, 88)
         if v >= 5: drums.note(s, 2, 49 if v >= 7 else 51, 70 + 3 * v)
