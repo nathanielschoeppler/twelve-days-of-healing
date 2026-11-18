@@ -35,7 +35,8 @@ When he uploads that file, run `python3 studio/studio.py make <path to the file>
   (`-3 -F --pitchmap`), her vibrato/slides kept. Never resynthesize the voice (WORLD/vocoders made it sound
   robotic and grainy). No chorus doubling, no exciter on the lead.
 - Vocal must never cut out or fade: no aggressive gates or noise reduction (only light `afftdn`).
-- The band is the sampled-instrument arrangement in `studio/arrange.py`, on the app's exact beat grid
+- Band: drums up front, bells; NO string pad (he called it "organ weird shit"), so `BAND_DROP=strings` by default
+  (`BAND_DROP=strings,piano,guitar,bass` = drums and bells only). The band is the sampled-instrument arrangement in `studio/arrange.py`, on the app's exact beat grid
   (100 BPM, beat 0 = 0.0 s), building from day 1 to day 12. Keep it locked to her vocal.
 - Mix: vocal about 1 dB over the band (he asked for the instruments a bit louder; `VOCAL_OVER_BAND`), master at -14 LUFS
   with no clipping. ONE lead voice only: he heard the harmony copy and the eighth-note echo as her voice overlapping,

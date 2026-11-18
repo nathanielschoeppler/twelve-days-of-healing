@@ -147,14 +147,22 @@ def plate_ir(path):
         return (r * np.exp(-t / 0.35) * 0.35 + lo) * np.exp(-t * 3.0 / 1.9)
     ir = np.stack([tail(1), tail(2)], 1); ir[:int(0.03 * SR)] = 0; ir /= np.sqrt((ir ** 2).sum() / 2) * 3.2
     sf.write(path, ir.astype(np.float32), SR)
-def backing(shift):
-    path = os.path.join(HERE, 'cache', f'backing_{shift:+d}.wav')
+# Instruments left out of the band. He said "no organ weird shit": the sustained string pad sounded organ-like,
+# so it is out by default. BAND_DROP=strings,piano,guitar,bass -> drums and bells only.
+BAND_DROP = [x for x in os.environ.get('BAND_DROP', 'strings').split(',') if x]
+def backing(shift, drop=None):
+    drop = sorted(BAND_DROP if drop is None else drop)
+    path = os.path.join(HERE, 'cache', f'backing_{shift:+d}' + (('_no-' + '-'.join(drop)) if drop else '') + '.wav')
     if os.path.exists(path): return path
     os.makedirs(os.path.dirname(path), exist_ok=True); wd = os.path.join(HERE, 'cache', f'stems_{shift:+d}'); os.makedirs(wd, exist_ok=True)
+    if not os.path.exists(f'{wd}/kit.wav'): render_stems(wd, shift)
+    return mix_band(wd, path, drop)
+def render_stems(wd, shift):
     sh(sys.executable, os.path.join(HERE, 'arrange.py'), wd, str(shift))
     for s in ('piano', 'guitar', 'bass', 'strings', 'glock', 'bells', 'shaker'):
         sh('fluidsynth', '-ni', '-q', '-R', '0', '-C', '0', '-g', '0.6', '-r', str(SR), '-F', f'{wd}/{s}.wav', SF_GM, f'{wd}/{s}.mid', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     sh('fluidsynth', '-ni', '-q', '-R', '0', '-C', '0', '-g', '0.6', '-r', str(SR), '-F', f'{wd}/kit.wav', SF_KIT, f'{wd}/kit.mid', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def mix_band(wd, path, drop):
     ir = os.path.join(HERE, 'cache', 'plate.wav'); plate_ir(ir)
     B = json.load(open(os.path.join(DATA, 'bars.json'))); st = {}; beat = 0
     for b in B:                                                  # each day's section = its opening bar
@@ -169,9 +177,10 @@ def backing(shift):
          ('bass', -1.0, 'highpass=f=35,lowpass=f=3500,equalizer=f=800:t=q:w=1:g=1.5,acompressor=threshold=0.15:ratio=4:attack=10:release=120:makeup=1.6', 0.0, 0.0),
          ('strings', -3.0, 'highpass=f=150,equalizer=f=300:t=q:w=1:g=-4,highshelf=f=7000:g=1.5', 0.0, 0.45),
          ('glock', -2.0, 'highpass=f=400', 0.25, 0.5),
-         ('bells', -5.0, 'highpass=f=2000', -0.55, 0.3),
+         ('bells', -3.5, 'highpass=f=2000', -0.55, 0.3),
          ('shaker', -4.0, 'highpass=f=1500', 0.5, 0.15),
          ('kit', 1.5, 'highpass=f=40,equalizer=f=350:t=q:w=1:g=-4,equalizer=f=4500:t=q:w=1:g=3,highshelf=f=10000:g=2,acompressor=threshold=0.25:ratio=3:attack=8:release=100:makeup=1.4', 0.0, 0.14)]
+    S = [x for x in S if x[0] not in drop]
     ins, fc, dry, snd = [], [], [], []
     for i, (nm, gain, chain, pan, sendv) in enumerate(S):
         ins += ['-i', f'{wd}/{nm}.wav']; l, r = min(1, 1 - pan), min(1, 1 + pan)
@@ -179,8 +188,10 @@ def backing(shift):
         dry.append(f'[d{i}]'); snd.append(f'[w{i}]')
     k = len(S); ins += ['-i', ir]
     fc.append(f"{''.join(snd)}amix=inputs={k}:normalize=0,highpass=f=200,lowpass=f=9000[rin];[rin][{k}:a]afir=dry=0:wet=1[rv]")
-    fc.append("[d1]asplit=2[gA][gB];[gB]adelay=17|0,pan=stereo|c0=0.0*c0|c1=0.7*c0,volume=-2dB[gD]"); dry[1] = '[gA]'
-    fc.append(f"{''.join(dry)}[gD][rv]amix=inputs={k + 2}:normalize=0,volume='{expr}':eval=frame,highpass=f=28,"
+    names = [x[0] for x in S]; extra = ''
+    if 'guitar' in names:                                        # guitar double-track feel: a 17 ms copy on the other side
+        gi = names.index('guitar'); fc.append(f"[d{gi}]asplit=2[gA][gB];[gB]adelay=17|0,pan=stereo|c0=0.0*c0|c1=0.7*c0,volume=-2dB[gD]"); dry[gi] = '[gA]'; extra = '[gD]'
+    fc.append(f"{''.join(dry)}{extra}[rv]amix=inputs={k + 1 + (1 if extra else 0)}:normalize=0,volume='{expr}':eval=frame,highpass=f=28,"
               "acompressor=threshold=0.3:ratio=2:attack=30:release=250:makeup=1.1,highshelf=f=12000:g=1.5,alimiter=limit=0.95:level=false[o]")
     sh('ffmpeg', '-loglevel', 'error', '-y', *ins, '-filter_complex', ';'.join(fc), '-map', '[o]', '-t', '277.2', '-c:a', 'pcm_s24le', path)
     return path
