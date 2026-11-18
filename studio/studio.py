@@ -170,8 +170,8 @@ def backing(shift):
          ('strings', -3.0, 'highpass=f=150,equalizer=f=300:t=q:w=1:g=-4,highshelf=f=7000:g=1.5', 0.0, 0.45),
          ('glock', -2.0, 'highpass=f=400', 0.25, 0.5),
          ('bells', -5.0, 'highpass=f=2000', -0.55, 0.3),
-         ('shaker', -5.5, 'highpass=f=1500', 0.5, 0.15),
-         ('kit', 0.0, 'highpass=f=40,equalizer=f=350:t=q:w=1:g=-4,equalizer=f=4500:t=q:w=1:g=3,highshelf=f=10000:g=2,acompressor=threshold=0.25:ratio=3:attack=8:release=100:makeup=1.4', 0.0, 0.14)]
+         ('shaker', -4.0, 'highpass=f=1500', 0.5, 0.15),
+         ('kit', 1.5, 'highpass=f=40,equalizer=f=350:t=q:w=1:g=-4,equalizer=f=4500:t=q:w=1:g=3,highshelf=f=10000:g=2,acompressor=threshold=0.25:ratio=3:attack=8:release=100:makeup=1.4', 0.0, 0.14)]
     ins, fc, dry, snd = [], [], [], []
     for i, (nm, gain, chain, pan, sendv) in enumerate(S):
         ins += ['-i', f'{wd}/{nm}.wav']; l, r = min(1, 1 - pan), min(1, 1 + pan)
